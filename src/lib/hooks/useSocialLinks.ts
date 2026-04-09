@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { collection, onSnapshot, addDoc, serverTimestamp } from "firebase/firestore";
+import {
+  collection,
+  onSnapshot,
+  addDoc,
+  serverTimestamp,
+  query,
+  where,
+} from "firebase/firestore";
 import { db } from "../firebase";
 import { collections, updateDocument, deleteDocument } from "../firestore";
 import { SocialLink } from "../../types";
@@ -35,8 +42,9 @@ function normalizeSocialLinkInput(
   if (data.platform !== undefined || requireRequiredFields) {
     const platform = normalizePlatform(data.platform);
     if (!platform) return { error: "Platform name is required." };
-    if (platform.length > 80)
+    if (platform.length > 80) {
       return { error: "Platform name must be 80 characters or less." };
+    }
     normalized.platform = platform;
   }
 
@@ -59,16 +67,25 @@ export function useSocialLinks(visibleOnly = false) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const baseRef = collection(db, collections.socialLinks);
+    const sourceRef = visibleOnly
+      ? query(baseRef, where("isVisible", "==", true))
+      : baseRef;
+
     const unsubscribe = onSnapshot(
-      collection(db, collections.socialLinks),
+      sourceRef,
       (snapshot) => {
         const data = snapshot.docs
           .map((docSnap) => ({
             id: docSnap.id,
             ...docSnap.data(),
           }))
-          .filter((item: any) => !visibleOnly || item.isVisible)
-          .sort((a, b) => String((a as any).platform ?? "").localeCompare(String((b as any).platform ?? ""))) as SocialLink[];
+          .sort((a, b) =>
+            String((a as any).platform ?? "").localeCompare(
+              String((b as any).platform ?? ""),
+            ),
+          ) as SocialLink[];
+
         setLinks(data);
         setError(null);
         setLoading(false);
