@@ -83,7 +83,7 @@ export function PublicLayout() {
     <img
       src={settings.logoUrl}
       alt={"Masebba"}
-      className="h-10 w-30 object-cover bg-transparent"
+      className="h-8 w-auto object-cover bg-transparent"
     />
   ) : (
     <span className="text-xl font-bold text-main tracking-tight">
