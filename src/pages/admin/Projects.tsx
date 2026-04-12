@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
@@ -12,18 +12,39 @@ import {
   EditIcon,
   TrashIcon,
   BriefcaseIcon,
-  StarIcon } from
-'lucide-react';
+  StarIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+} from 'lucide-react';
 import { useProjects } from '../../lib/hooks/useProjects';
 import { Spinner } from '../../components/ui/Spinner';
+
 export function Projects() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
-  const [, setIsSubmitting] = useState(false);
-  const { projects, loading, addProject, updateProject, deleteProject } =
-  useProjects();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const {
+    projects,
+    loading,
+    addProject,
+    updateProject,
+    deleteProject,
+    moveProjectOrder,
+    moveProjectHomeOrder,
+    setProjectHomeVisibility,
+  } = useProjects();
+
+  const homeProjects = useMemo(
+    () =>
+      [...projects]
+        .filter((project) => project.showOnHome)
+        .sort((a, b) => a.homeOrder - b.homeOrder || a.order - b.order),
+    [projects],
+  );
+
   const handleSaveProject = async (data: Partial<Project>) => {
     setIsSubmitting(true);
     try {
@@ -41,6 +62,7 @@ export function Projects() {
       setIsSubmitting(false);
     }
   };
+
   const handleDeleteProject = async () => {
     if (projectToDelete) {
       setIsSubmitting(true);
@@ -55,106 +77,198 @@ export function Projects() {
       }
     }
   };
+
   const columns = [
-  {
-    header: 'Title',
-    accessor: 'title' as keyof Project
-  },
-  {
-    header: 'Category',
-    accessor: 'category' as keyof Project
-  },
-  {
-    header: 'Featured',
-    cell: (item: Project) =>
-    item.isFeatured ?
-    <StarIcon className="w-4 h-4 text-yellow-500 fill-current" /> :
+    {
+      header: 'Order',
+      cell: (item: Project) => {
+        const index = projects.findIndex((project) => project.id === item.id);
+        return (
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-main w-8">{item.order || index + 1}</span>
+            <div className="flex flex-col">
+              <button
+                type="button"
+                onClick={() => moveProjectOrder(item.id, -1)}
+                disabled={index <= 0}
+                className="p-1 rounded hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Move project up"
+              >
+                <ArrowUpIcon className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => moveProjectOrder(item.id, 1)}
+                disabled={index < 0 || index >= projects.length - 1}
+                className="p-1 rounded hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed"
+                aria-label="Move project down"
+              >
+                <ArrowDownIcon className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        );
+      },
+    },
+    {
+      header: 'Title',
+      accessor: 'title' as keyof Project,
+    },
+    {
+      header: 'Category',
+      accessor: 'category' as keyof Project,
+    },
+    {
+      header: 'Home',
+      cell: (item: Project) => {
+        const homeIndex = homeProjects.findIndex((project) => project.id === item.id);
+        const isOnHome = item.showOnHome;
 
-    '-'
+        return (
+          <div className="flex items-center gap-3">
+            <label className="inline-flex items-center gap-2 text-sm text-main">
+              <input
+                type="checkbox"
+                checked={isOnHome}
+                onChange={(e) => setProjectHomeVisibility(item.id, e.target.checked)}
+                className="rounded border-border text-primary focus:ring-primary"
+              />
+              Show
+            </label>
 
-  },
-  {
-    header: 'Actions',
-    className: 'text-right',
-    cell: (item: Project) =>
-    <div className="flex justify-end gap-2">
+            {isOnHome ? (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-primary">
+                  #{item.homeOrder || homeIndex + 1}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => moveProjectHomeOrder(item.id, -1)}
+                  disabled={homeIndex <= 0}
+                  className="p-1 rounded hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed"
+                  aria-label="Move home project up"
+                >
+                  <ArrowUpIcon className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveProjectHomeOrder(item.id, 1)}
+                  disabled={homeIndex < 0 || homeIndex >= homeProjects.length - 1}
+                  className="p-1 rounded hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed"
+                  aria-label="Move home project down"
+                >
+                  <ArrowDownIcon className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <span className="text-xs text-muted">Hidden</span>
+            )}
+          </div>
+        );
+      },
+    },
+    {
+      header: 'Featured',
+      cell: (item: Project) =>
+        item.isFeatured ? (
+          <span className="inline-flex items-center gap-1 text-yellow-600 font-medium">
+            <StarIcon className="w-4 h-4 fill-current" /> Badge
+          </span>
+        ) : (
+          '-'
+        ),
+    },
+    {
+      header: 'Actions',
+      className: 'text-right',
+      cell: (item: Project) => (
+        <div className="flex justify-end gap-2">
           <button
-        onClick={() => {
-          setEditingProject(item);
-          setIsModalOpen(true);
-        }}
-        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded">
-        
+            type="button"
+            onClick={() => {
+              setEditingProject(item);
+              setIsModalOpen(true);
+            }}
+            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded"
+          >
             <EditIcon className="w-4 h-4" />
           </button>
           <button
-        onClick={() => {
-          setProjectToDelete(item.id);
-          setIsDeleteModalOpen(true);
-        }}
-        className="p-1.5 text-red-600 hover:bg-red-50 rounded">
-        
+            type="button"
+            onClick={() => {
+              setProjectToDelete(item.id);
+              setIsDeleteModalOpen(true);
+            }}
+            className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+          >
             <TrashIcon className="w-4 h-4" />
           </button>
         </div>
-
-  }];
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-main">Projects</h1>
-          <p className="text-muted mt-1">Manage your portfolio projects.</p>
+          <p className="text-muted mt-1">
+            Manage portfolio projects, gallery images, home display order, and portfolio order.
+          </p>
         </div>
         <Button
           className="gap-2"
           onClick={() => {
             setEditingProject(null);
             setIsModalOpen(true);
-          }}>
-          
+          }}
+        >
           <PlusIcon className="w-4 h-4" />
           Add Project
         </Button>
       </div>
 
       <Card padding="none" className="overflow-hidden">
-        {loading ?
-        <div className="flex justify-center items-center p-12">
+        {loading ? (
+          <div className="flex justify-center items-center p-12">
             <Spinner size="lg" />
-          </div> :
-
-        <DataTable
-          columns={columns}
-          data={projects}
-          keyExtractor={(item) => item.id}
-          emptyState={
-          <EmptyState
-            icon={BriefcaseIcon}
-            title="No projects yet"
-            description="Get started by adding your first portfolio project."
-            actionLabel="Add Project"
-            onAction={() => {
-              setEditingProject(null);
-              setIsModalOpen(true);
-            }} />
-
-          } />
-
-        }
+          </div>
+        ) : (
+          <DataTable
+            columns={columns}
+            data={projects}
+            keyExtractor={(item) => item.id}
+            emptyState={
+              <EmptyState
+                icon={BriefcaseIcon}
+                title="No projects yet"
+                description="Get started by adding your first portfolio project."
+                actionLabel="Add Project"
+                onAction={() => {
+                  setEditingProject(null);
+                  setIsModalOpen(true);
+                }}
+              />
+            }
+          />
+        )}
       </Card>
+
+      <div className="text-xs text-muted">
+        Home projects are selected with the checkbox and ordered with the arrows. Portfolio order uses the first column arrows.
+      </div>
 
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title={editingProject ? 'Edit Project' : 'Add New Project'}>
-        
+        title={editingProject ? 'Edit Project' : 'Add New Project'}
+      >
         <ProjectForm
           initialData={editingProject || undefined}
           onSubmit={handleSaveProject}
-          onCancel={() => setIsModalOpen(false)} />
-        
+          onCancel={() => setIsModalOpen(false)}
+        />
       </Modal>
 
       <ConfirmDialog
@@ -162,8 +276,8 @@ export function Projects() {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeleteProject}
         title="Delete Project"
-        message="Are you sure you want to delete this project? This action cannot be undone." />
-      
-    </div>);
-
+        message="Are you sure you want to delete this project? This action cannot be undone."
+      />
+    </div>
+  );
 }

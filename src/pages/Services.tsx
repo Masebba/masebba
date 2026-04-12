@@ -1,22 +1,22 @@
-import React from 'react';
-import { ServiceCard } from '../components/ServiceCard';
-import { CTASection } from '../components/home/CTASection';
-import { useServices } from '../lib/hooks/useServices';
+import React from "react";
+import { ServiceCard } from "../components/ServiceCard";
+import { CTASection } from "../components/home/CTASection";
+import { useServices } from "../lib/hooks/useServices";
 import {
   CodeIcon,
   SmartphoneIcon,
   PenToolIcon,
   ServerIcon,
   CloudIcon,
-  LightbulbIcon } from
-'lucide-react';
+  LightbulbIcon,
+} from "lucide-react";
 const iconMap: Record<string, any> = {
   Code: CodeIcon,
   Smartphone: SmartphoneIcon,
   PenTool: PenToolIcon,
   Server: ServerIcon,
   Cloud: CloudIcon,
-  Lightbulb: LightbulbIcon
+  Lightbulb: LightbulbIcon,
 };
 export function Services() {
   const { services } = useServices(true); // visibleOnly = true
@@ -34,25 +34,25 @@ export function Services() {
           </p>
         </div>
 
-        {services.length === 0 ?
-        <div className="text-center py-20 text-muted">
+        {services.length === 0 ? (
+          <div className="text-center py-20 text-muted">
             No services available at the moment.
-          </div> :
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
-            {services.map((service) =>
-          <ServiceCard
-            key={service.id}
-            title={service.title}
-            description={service.description}
-            icon={iconMap[service.icon] || CodeIcon} />
-
-          )}
           </div>
-        }
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
+            {services.map((service) => (
+              <ServiceCard
+                key={service.id}
+                title={service.title}
+                description={service.description}
+                icon={iconMap[service.icon] || CodeIcon}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <CTASection />
-    </div>);
-
+    </div>
+  );
 }

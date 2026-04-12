@@ -11,7 +11,7 @@ export function FeaturedBlogPosts() {
   if (recentPosts.length === 0) return null;
   return (
     <section className="py-10 md:py-22">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto w-full max-w-6xl px-4">
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
           <div className="max-w-2xl">
             <h2 className="text-sm font-bold text-primary uppercase tracking-widest mb-2">

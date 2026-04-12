@@ -15,7 +15,16 @@ export default {
         main: 'var(--text-main)',
         muted: 'var(--text-muted)',
         border: 'var(--border-color)',
-      }
+      },
+      keyframes: {
+        blink: {
+          '0%, 49%': { opacity: '1' },
+          '50%, 100%': { opacity: '0.2' },
+        },
+      },
+      animation: {
+        blink: 'blink 1.5s step-end infinite',
+      },
     },
   },
   plugins: [],

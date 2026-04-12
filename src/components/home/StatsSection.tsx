@@ -83,7 +83,7 @@ export function StatsSection() {
 
   return (
     <section className="py-5 border-y border-border bg-surface/50">
-      <div className="container mx-auto px-4">
+      <div className="container mx-auto w-full max-w-6xl px-4">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-12">
           {stats.map((stat, index) => (
             <StatItem

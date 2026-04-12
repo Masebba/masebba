@@ -49,11 +49,16 @@ export interface Project {
   category: string;
   description: string;
   coverImage: string;
+  detailImage1?: string;
+  detailImage2?: string;
   technologies: string[];
   liveLink?: string;
   sourceLink?: string;
   isFeatured: boolean;
-  createdAt: string;
+  showOnHome: boolean;
+  order: number;
+  homeOrder: number;
+  createdAt: any;
 }
 
 export interface BlogPost {
@@ -68,7 +73,7 @@ export interface BlogPost {
   tags: string[];
   status: 'draft' | 'published';
   publishedAt?: string;
-  createdAt: string;
+  createdAt: any;
   updatedAt: string;
 }
 
@@ -78,7 +83,7 @@ export interface ContactMessage {
   email: string;
   message: string;
   status: 'unread' | 'read' | 'replied';
-  createdAt: string;
+  createdAt: any;
 }
 
 export interface SocialLink {

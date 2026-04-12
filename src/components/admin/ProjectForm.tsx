@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Input } from "../ui/Input";
 import { Textarea } from "../ui/Textarea";
 import { Button } from "../ui/Button";
 import { Project } from "../../types";
+import { uploadImage } from "../../lib/storage";
 
 interface ProjectFormProps {
   initialData?: Partial<Project>;
@@ -18,6 +19,8 @@ interface FormErrors {
   liveLink?: string;
   sourceLink?: string;
   coverImage?: string;
+  detailImage1?: string;
+  detailImage2?: string;
 }
 
 function stripHtml(input: string): string {
@@ -48,13 +51,91 @@ function safeFileName(name: string): string {
   return name.replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("Failed to read image file."));
-    reader.readAsDataURL(file);
+type ImageFieldKey = "coverImage" | "detailImage1" | "detailImage2";
+
+interface ImageFileState {
+  file: File | null;
+  preview: string;
+}
+
+const emptyImageState: ImageFileState = {
+  file: null,
+  preview: "",
+};
+
+function ImageUploadSection({
+  label,
+  fieldKey,
+  description,
+  fileState,
+  error,
+  onFileChange,
+  onRemove,
+}: {
+  label: string;
+  fieldKey: ImageFieldKey;
+  description: string;
+  fileState: ImageFileState;
+  error?: string;
+  onFileChange: (fieldKey: ImageFieldKey, file: File | null) => void;
+  onRemove: (fieldKey: ImageFieldKey) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="text-sm font-medium text-main">{label}</label>
+      <div className="rounded-lg border border-dashed border-border p-4 space-y-4">
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => onFileChange(fieldKey, e.target.files?.[0] || null)}
+          className="block w-full text-sm text-muted file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-white hover:file:opacity-90"
+        />
+
+        {fileState.preview ? (
+          <div className="space-y-3">
+            <img
+              src={fileState.preview}
+              alt={`${label} preview`}
+              className="w-full max-h-56 object-cover rounded-lg border border-border"
+            />
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-xs text-muted break-all">
+                {fileState.file ? fileState.file.name : "Current image"}
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onRemove(fieldKey)}
+              >
+                Remove
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-muted">{description}</p>
+        )}
+
+        {error ? <p className="text-sm text-red-500">{error}</p> : null}
+      </div>
+    </div>
+  );
+}
+
+async function uploadSelectedImage(
+  file: File,
+  fieldKey: ImageFieldKey,
+  setUploadProgress: (value: number) => void,
+): Promise<string> {
+  const path = `projects/${fieldKey}/${Date.now()}-${safeFileName(file.name)}`;
+  const result = await uploadImage(file, path, (progress) => {
+    setUploadProgress(progress);
   });
+
+  if (result.error || !result.url) {
+    throw new Error(result.error || "Failed to upload image.");
+  }
+
+  return result.url;
 }
 
 export function ProjectForm({
@@ -67,22 +148,34 @@ export function ProjectForm({
     category: "",
     description: "",
     coverImage: "",
+    detailImage1: "",
+    detailImage2: "",
     technologies: [],
     liveLink: "",
     sourceLink: "",
     isFeatured: false,
+    showOnHome: false,
     ...initialData,
   });
 
   const [techInput, setTechInput] = useState(
     initialData?.technologies?.join(", ") || "",
   );
-  const [coverFile, setCoverFile] = useState<File | null>(null);
-  const [coverPreview, setCoverPreview] = useState<string>(
-    initialData?.coverImage || "",
-  );
+  const [coverState, setCoverState] = useState<ImageFileState>({
+    file: null,
+    preview: initialData?.coverImage || "",
+  });
+  const [detail1State, setDetail1State] = useState<ImageFileState>({
+    file: null,
+    preview: initialData?.detailImage1 || "",
+  });
+  const [detail2State, setDetail2State] = useState<ImageFileState>({
+    file: null,
+    preview: initialData?.detailImage2 || "",
+  });
   const [isSaving, setIsSaving] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [activeUploadLabel, setActiveUploadLabel] = useState<string | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
 
   useEffect(() => {
@@ -91,28 +184,55 @@ export function ProjectForm({
       category: "",
       description: "",
       coverImage: "",
+      detailImage1: "",
+      detailImage2: "",
       technologies: [],
       liveLink: "",
       sourceLink: "",
       isFeatured: false,
+      showOnHome: false,
       ...initialData,
     });
 
     setTechInput(initialData?.technologies?.join(", ") || "");
-    setCoverFile(null);
-    setCoverPreview(initialData?.coverImage || "");
+    setCoverState({
+      file: null,
+      preview: initialData?.coverImage || "",
+    });
+    setDetail1State({
+      file: null,
+      preview: initialData?.detailImage1 || "",
+    });
+    setDetail2State({
+      file: null,
+      preview: initialData?.detailImage2 || "",
+    });
     setErrors({});
     setUploadProgress(0);
+    setActiveUploadLabel(null);
   }, [initialData]);
 
-  useEffect(() => {
-    if (!coverFile) return;
+  const imageStateMap = useMemo(
+    () => ({
+      coverImage: coverState,
+      detailImage1: detail1State,
+      detailImage2: detail2State,
+    }),
+    [coverState, detail1State, detail2State],
+  );
 
-    const objectUrl = URL.createObjectURL(coverFile);
-    setCoverPreview(objectUrl);
-
-    return () => URL.revokeObjectURL(objectUrl);
-  }, [coverFile]);
+  const setImageState = (
+    fieldKey: ImageFieldKey,
+    updater: (prev: ImageFileState) => ImageFileState,
+  ) => {
+    if (fieldKey === "coverImage") {
+      setCoverState(updater);
+    } else if (fieldKey === "detailImage1") {
+      setDetail1State(updater);
+    } else {
+      setDetail2State(updater);
+    }
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -146,48 +266,50 @@ export function ProjectForm({
     }));
   };
 
-  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-
-    if (!file) {
-      return;
-    }
+  const handleImageChange = (fieldKey: ImageFieldKey, file: File | null) => {
+    if (!file) return;
 
     if (!file.type.startsWith("image/")) {
       setErrors((prev) => ({
         ...prev,
-        coverImage: "Please choose a valid image file.",
+        [fieldKey]: "Please choose a valid image file.",
       }));
-      e.target.value = "";
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
       setErrors((prev) => ({
         ...prev,
-        coverImage: "Image must be smaller than 5MB.",
+        [fieldKey]: "Image must be smaller than 5MB.",
       }));
-      e.target.value = "";
       return;
     }
 
-    setCoverFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setImageState(fieldKey, () => ({
+      file,
+      preview: objectUrl,
+    }));
     setErrors((prev) => ({
       ...prev,
-      coverImage: undefined,
+      [fieldKey]: undefined,
     }));
   };
 
-  const removeCoverImage = () => {
-    setCoverFile(null);
-    setCoverPreview("");
+  const removeImage = (fieldKey: ImageFieldKey) => {
+    setImageState(fieldKey, () => ({
+      file: null,
+      preview: "",
+    }));
+
     setFormData((prev) => ({
       ...prev,
-      coverImage: "",
+      [fieldKey]: "",
     }));
+
     setErrors((prev) => ({
       ...prev,
-      coverImage: undefined,
+      [fieldKey]: undefined,
     }));
   };
 
@@ -239,6 +361,27 @@ export function ProjectForm({
     return Object.keys(nextErrors).length === 0;
   };
 
+  const finalizeImageValue = async (
+    fieldKey: ImageFieldKey,
+    currentValue: string,
+  ): Promise<string> => {
+    const file = imageStateMap[fieldKey].file;
+    if (!file) {
+      return currentValue.trim();
+    }
+
+    const label =
+      fieldKey === "coverImage"
+        ? "Project cover image"
+        : fieldKey === "detailImage1"
+          ? "Project detail image 1"
+          : "Project detail image 2";
+
+    setActiveUploadLabel(label);
+    const uploadedUrl = await uploadSelectedImage(file, fieldKey, setUploadProgress);
+    return uploadedUrl;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -247,31 +390,47 @@ export function ProjectForm({
     setIsSaving(true);
 
     try {
-      let coverImage = (formData.coverImage || "").trim();
-
-      if (coverFile) {
-        setUploadProgress(25);
-        coverImage = await fileToDataUrl(coverFile);
-        setUploadProgress(100);
-      }
+      const coverImage = await finalizeImageValue(
+        "coverImage",
+        (formData.coverImage || "").trim(),
+      );
+      const detailImage1 = await finalizeImageValue(
+        "detailImage1",
+        (formData.detailImage1 || "").trim(),
+      );
+      const detailImage2 = await finalizeImageValue(
+        "detailImage2",
+        (formData.detailImage2 || "").trim(),
+      );
 
       const safeData: Partial<Project> = {
         title: (formData.title || "").trim(),
         category: (formData.category || "").trim(),
         description: stripHtml(formData.description || ""),
         coverImage,
+        detailImage1,
+        detailImage2,
         technologies: normalizeTechList(techInput),
         liveLink: (formData.liveLink || "").trim(),
         sourceLink: (formData.sourceLink || "").trim(),
         isFeatured: Boolean(formData.isFeatured),
+        showOnHome: Boolean(formData.showOnHome),
       };
 
       onSubmit(safeData);
+    } catch (err: any) {
+      setErrors((prev) => ({
+        ...prev,
+        coverImage: prev.coverImage || err.message || "Failed to save project.",
+      }));
     } finally {
       setIsSaving(false);
       setUploadProgress(0);
+      setActiveUploadLabel(null);
     }
   };
+
+  const progressLabel = activeUploadLabel || "Uploading images...";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -305,63 +464,52 @@ export function ProjectForm({
         error={errors.description}
       />
 
-      <div className="space-y-2">
-        <label className="text-sm font-medium text-main">
-          Project Cover Image
-        </label>
-        <div className="rounded-lg border border-dashed border-border p-4 space-y-4">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleCoverChange}
-            className="block w-full text-sm text-muted file:mr-4 file:rounded-md file:border-0 file:bg-primary file:px-4 file:py-2 file:text-white hover:file:opacity-90"
+      <div className="space-y-4">
+        <ImageUploadSection
+          label="Project Cover Image"
+          fieldKey="coverImage"
+          description="Upload the main cover image shown on the portfolio cards. JPG, PNG, WebP, GIF, or AVIF up to 5MB."
+          fileState={coverState}
+          error={errors.coverImage}
+          onFileChange={handleImageChange}
+          onRemove={removeImage}
+        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ImageUploadSection
+            label="Project Detail Image 1"
+            fieldKey="detailImage1"
+            description="Upload the first gallery image shown inside the project details page."
+            fileState={detail1State}
+            error={errors.detailImage1}
+            onFileChange={handleImageChange}
+            onRemove={removeImage}
           />
 
-          {coverPreview ? (
-            <div className="space-y-3">
-              <img
-                src={coverPreview}
-                alt="Cover preview"
-                className="w-full max-h-56 object-cover rounded-lg border border-border"
-              />
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs text-muted break-all">
-                  {coverFile ? coverFile.name : "Current cover image"}
-                </p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={removeCoverImage}
-                >
-                  Remove Image
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm text-muted">
-              Upload an image instead of pasting a URL. JPG, PNG, WebP, GIF, or
-              AVIF up to 5MB.
-            </p>
-          )}
-
-          {uploadProgress > 0 && uploadProgress < 100 ? (
-            <div className="space-y-1">
-              <div className="h-2 rounded-full bg-surface overflow-hidden">
-                <div
-                  className="h-2 bg-primary transition-all"
-                  style={{ width: `${uploadProgress}%` }}
-                />
-              </div>
-              <p className="text-xs text-muted">
-                Uploading image... {Math.round(uploadProgress)}%
-              </p>
-            </div>
-          ) : null}
-
-          {errors.coverImage ? (
-            <p className="text-sm text-red-500">{errors.coverImage}</p>
-          ) : null}
+          <ImageUploadSection
+            label="Project Detail Image 2"
+            fieldKey="detailImage2"
+            description="Upload the second gallery image shown inside the project details page."
+            fileState={detail2State}
+            error={errors.detailImage2}
+            onFileChange={handleImageChange}
+            onRemove={removeImage}
+          />
         </div>
+
+        {uploadProgress > 0 && uploadProgress < 100 ? (
+          <div className="space-y-1">
+            <div className="h-2 rounded-full bg-surface overflow-hidden">
+              <div
+                className="h-2 bg-primary transition-all"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+            <p className="text-xs text-muted">
+              {progressLabel}... {Math.round(uploadProgress)}%
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <Input
@@ -392,18 +540,29 @@ export function ProjectForm({
         />
       </div>
 
-      <div className="flex items-center gap-2 mt-2">
-        <input
-          type="checkbox"
-          id="isFeatured"
-          name="isFeatured"
-          checked={Boolean(formData.isFeatured)}
-          onChange={handleChange}
-          className="rounded border-border text-primary focus:ring-primary"
-        />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+        <label className="flex items-center gap-2 text-sm font-medium text-main">
+          <input
+            type="checkbox"
+            id="isFeatured"
+            name="isFeatured"
+            checked={Boolean(formData.isFeatured)}
+            onChange={handleChange}
+            className="rounded border-border text-primary focus:ring-primary"
+          />
+          Feature badge on card
+        </label>
 
-        <label htmlFor="isFeatured" className="text-sm font-medium text-main">
-          Feature on homepage
+        <label className="flex items-center gap-2 text-sm font-medium text-main">
+          <input
+            type="checkbox"
+            id="showOnHome"
+            name="showOnHome"
+            checked={Boolean(formData.showOnHome)}
+            onChange={handleChange}
+            className="rounded border-border text-primary focus:ring-primary"
+          />
+          Show on home page
         </label>
       </div>
 

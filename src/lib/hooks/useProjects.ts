@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   collection,
   onSnapshot,
@@ -59,6 +59,58 @@ function normalizeTechList(value: unknown): string[] {
     .filter((item, index, array) => array.indexOf(item) === index);
 }
 
+function toMillis(value: unknown): number {
+  if (!value) return 0;
+
+  if (typeof value === "string") {
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  }
+
+  if (
+    typeof value === "object" &&
+    value &&
+    "toDate" in value &&
+    typeof (value as any).toDate === "function"
+  ) {
+    return (value as any).toDate().getTime();
+  }
+
+  return 0;
+}
+
+function toNumber(value: unknown, fallback = 0): number {
+  const parsed = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
+
+function normalizeProjectRecord(
+  id: string,
+  raw: Record<string, unknown>,
+  fallbackOrder: number,
+): Project {
+  const order = toNumber(raw.order, fallbackOrder);
+  const showOnHome = Boolean(raw.showOnHome);
+
+  return {
+    id,
+    title: cleanText(raw.title),
+    category: cleanText(raw.category),
+    description: cleanText(raw.description),
+    coverImage: normalizeMediaValue(raw.coverImage),
+    detailImage1: normalizeMediaValue(raw.detailImage1),
+    detailImage2: normalizeMediaValue(raw.detailImage2),
+    technologies: normalizeTechList(raw.technologies),
+    liveLink: normalizeUrl(raw.liveLink),
+    sourceLink: normalizeUrl(raw.sourceLink),
+    isFeatured: Boolean(raw.isFeatured),
+    showOnHome,
+    order,
+    homeOrder: showOnHome ? toNumber(raw.homeOrder, fallbackOrder) : 0,
+    createdAt: raw.createdAt as any,
+  };
+}
+
 function normalizeProjectInput(
   data: Partial<Project>,
   requireRequiredFields: boolean,
@@ -96,6 +148,14 @@ function normalizeProjectInput(
     normalized.coverImage = normalizeMediaValue(data.coverImage);
   }
 
+  if (data.detailImage1 !== undefined || requireRequiredFields) {
+    normalized.detailImage1 = normalizeMediaValue(data.detailImage1);
+  }
+
+  if (data.detailImage2 !== undefined || requireRequiredFields) {
+    normalized.detailImage2 = normalizeMediaValue(data.detailImage2);
+  }
+
   if (data.technologies !== undefined || requireRequiredFields) {
     const technologies = normalizeTechList(data.technologies);
     if (technologies.some((tech) => tech.length > 40)) {
@@ -116,27 +176,43 @@ function normalizeProjectInput(
     normalized.isFeatured = Boolean(data.isFeatured);
   }
 
+  if (data.showOnHome !== undefined || requireRequiredFields) {
+    normalized.showOnHome = Boolean(data.showOnHome);
+  }
+
+  if (data.order !== undefined || requireRequiredFields) {
+    const order = toNumber(data.order, 0);
+    normalized.order = order > 0 ? Math.floor(order) : 0;
+  }
+
+  if (data.homeOrder !== undefined || requireRequiredFields) {
+    const homeOrder = toNumber(data.homeOrder, 0);
+    normalized.homeOrder = homeOrder > 0 ? Math.floor(homeOrder) : 0;
+  }
+
   return { data: normalized };
 }
 
-function toMillis(value: unknown): number {
-  if (!value) return 0;
+function compareProjects(a: Project, b: Project): number {
+  const orderA = toNumber(a.order, Number.MAX_SAFE_INTEGER);
+  const orderB = toNumber(b.order, Number.MAX_SAFE_INTEGER);
 
-  if (typeof value === "string") {
-    const parsed = Date.parse(value);
-    return Number.isNaN(parsed) ? 0 : parsed;
+  if (orderA !== orderB) {
+    return orderA - orderB;
   }
 
-  if (
-    typeof value === "object" &&
-    value &&
-    "toDate" in value &&
-    typeof (value as any).toDate === "function"
-  ) {
-    return (value as any).toDate().getTime();
+  return toMillis(b.createdAt) - toMillis(a.createdAt);
+}
+
+function compareHomeProjects(a: Project, b: Project): number {
+  const homeA = toNumber(a.homeOrder, Number.MAX_SAFE_INTEGER);
+  const homeB = toNumber(b.homeOrder, Number.MAX_SAFE_INTEGER);
+
+  if (homeA !== homeB) {
+    return homeA - homeB;
   }
 
-  return 0;
+  return compareProjects(a, b);
 }
 
 export function useProjects() {
@@ -148,17 +224,17 @@ export function useProjects() {
     const unsubscribe = onSnapshot(
       collection(db, collections.projects),
       (snapshot) => {
-        const data = snapshot.docs
-          .map((docSnap) => ({
-            id: docSnap.id,
-            ...docSnap.data(),
-          }))
-          .sort(
-            (a, b) =>
-              toMillis((b as any).createdAt) - toMillis((a as any).createdAt),
-          ) as Project[];
+        const normalized = snapshot.docs.map((docSnap, index) =>
+          normalizeProjectRecord(
+            docSnap.id,
+            docSnap.data() as Record<string, unknown>,
+            index + 1,
+          ),
+        );
 
-        setProjects(data);
+        const sorted = normalized.sort(compareProjects);
+
+        setProjects(sorted);
         setError(null);
         setLoading(false);
       },
@@ -171,6 +247,21 @@ export function useProjects() {
     return unsubscribe;
   }, []);
 
+  const nextOrder = useMemo(() => {
+    const numericOrders = projects
+      .map((project) => toNumber(project.order, 0))
+      .filter((value) => value > 0);
+    return (numericOrders.length ? Math.max(...numericOrders) : 0) + 1;
+  }, [projects]);
+
+  const nextHomeOrder = useMemo(() => {
+    const numericOrders = projects
+      .filter((project) => project.showOnHome)
+      .map((project) => toNumber(project.homeOrder, 0))
+      .filter((value) => value > 0);
+    return (numericOrders.length ? Math.max(...numericOrders) : 0) + 1;
+  }, [projects]);
+
   const addProject = async (data: Omit<Project, "id" | "createdAt">) => {
     const normalized = normalizeProjectInput(data, true);
     if (normalized.error) return { id: null, error: normalized.error };
@@ -178,6 +269,14 @@ export function useProjects() {
     try {
       const docRef = await addDoc(collection(db, collections.projects), {
         ...normalized.data,
+        order: normalized.data?.order && normalized.data.order > 0 ? normalized.data.order : nextOrder,
+        showOnHome: Boolean(normalized.data?.showOnHome),
+        homeOrder:
+          normalized.data?.showOnHome && normalized.data.homeOrder && normalized.data.homeOrder > 0
+            ? normalized.data.homeOrder
+            : normalized.data?.showOnHome
+              ? nextHomeOrder
+              : 0,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -202,6 +301,73 @@ export function useProjects() {
     return await deleteDocument(collections.projects, id);
   };
 
+  const moveProjectOrder = async (id: string, direction: -1 | 1) => {
+    const ordered = [...projects].sort(compareProjects);
+    const currentIndex = ordered.findIndex((project) => project.id === id);
+    const targetIndex = currentIndex + direction;
+
+    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= ordered.length) {
+      return { error: "Cannot move project further in that direction." };
+    }
+
+    const current = ordered[currentIndex];
+    const target = ordered[targetIndex];
+
+    try {
+      await updateDocument<Project>(collections.projects, current.id, {
+        order: target.order,
+      });
+      await updateDocument<Project>(collections.projects, target.id, {
+        order: current.order,
+      });
+      return { error: null };
+    } catch (err: any) {
+      return { error: err.message };
+    }
+  };
+
+  const moveProjectHomeOrder = async (id: string, direction: -1 | 1) => {
+    const ordered = [...projects]
+      .filter((project) => project.showOnHome)
+      .sort(compareHomeProjects);
+
+    const currentIndex = ordered.findIndex((project) => project.id === id);
+    const targetIndex = currentIndex + direction;
+
+    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= ordered.length) {
+      return { error: "Cannot move project further in that direction." };
+    }
+
+    const current = ordered[currentIndex];
+    const target = ordered[targetIndex];
+
+    try {
+      await updateDocument<Project>(collections.projects, current.id, {
+        homeOrder: target.homeOrder,
+      });
+      await updateDocument<Project>(collections.projects, target.id, {
+        homeOrder: current.homeOrder,
+      });
+      return { error: null };
+    } catch (err: any) {
+      return { error: err.message };
+    }
+  };
+
+  const setProjectHomeVisibility = async (id: string, showOnHome: boolean) => {
+    const current = projects.find((project) => project.id === id);
+    if (!current) {
+      return { error: "Project not found." };
+    }
+
+    const nextData: Partial<Project> = {
+      showOnHome,
+      homeOrder: showOnHome ? (current.showOnHome ? current.homeOrder : nextHomeOrder) : 0,
+    };
+
+    return await updateDocument<Project>(collections.projects, id, nextData);
+  };
+
   return {
     projects,
     loading,
@@ -209,5 +375,8 @@ export function useProjects() {
     addProject,
     updateProject,
     deleteProject,
+    moveProjectOrder,
+    moveProjectHomeOrder,
+    setProjectHomeVisibility,
   };
 }

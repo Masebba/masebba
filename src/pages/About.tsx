@@ -322,9 +322,9 @@ export function About() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-16 md:py-24 max-w-6xl">
-      <div className="flex flex-col md:flex-row gap-12 items-start mb-24">
-        <div className="w-full md:w-1/2 space-y-8">
+    <div className="container mx-auto px-4 py-16 md:py-16 max-w-6xl">
+      <div className="flex flex-col md:flex-row gap-6 items-start mb-24">
+        <div className="w-full md:w-1/2 space-y-8 px-4">
           <div className="aspect-square max-w-md bg-surface-dark rounded-2xl overflow-hidden relative shadow-xl mx-auto md:mx-0 border border-border">
             {settings.aboutImageUrl ? (
               <img
@@ -336,7 +336,7 @@ export function About() {
               <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-primary/5 flex flex-col items-center justify-center">
                 <UserIcon className="w-24 h-24 text-primary/40 mb-4" />
                 <span className="text-sm text-muted font-medium">
-                  Upload photo in admin settings
+                  Upload photo
                 </span>
               </div>
             )}
@@ -457,7 +457,7 @@ export function About() {
             The milestones that shaped my career and expertise over the years.
           </p>
         </div>
-        <div className="relative max-w-4xl mx-auto">
+        <div className="relative max-w-6xl mx-auto">
           <div className="absolute left-8 md:left-1/2 top-0 bottom-0 w-px bg-border -translate-x-1/2 hidden sm:block" />
           <div className="space-y-2">
             {stories.map((story, index) => {
@@ -468,21 +468,21 @@ export function About() {
                   key={`${story.year}-${story.title}-${index}`}
                   className={`relative flex flex-col sm:flex-row items-start sm:items-center gap-8 ${isEven ? "sm:flex-row-reverse" : ""}`}
                 >
-                  <div className="hidden sm:flex absolute left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-background border-4 border-surface items-center justify-center z-10 shadow-sm">
+                  <div className="hidden sm:flex absolute left-1/2 -translate-x-1/2 w-12 h-12 rounded-full bg-background border-4 border-surface items-center justify-center z-10 shadow-sm hover:border-primary">
                     <Icon className="w-5 h-5 text-primary" />
                   </div>
                   <div
                     className={`w-full sm:w-1/2 ${isEven ? "sm:pl-12" : "sm:pr-12"}`}
                   >
                     <Card
-                      padding="lg"
-                      className="relative hover:-translate-y-1 transition-transform duration-300"
+                      padding="sm"
+                      className="relative hover:-translate-y-1 transition-transform duration-300 hover:border-primary"
                     >
                       <div className="flex items-center gap-4 mb-4">
-                        <span className="text-4xl font-black text-primary/20 p-1 border border-primary rounded-lg">
+                        <span className="text-sm font-black text-primary p-1 ">
                           {story.year}
                         </span>
-                        <h3 className="text-xl font-bold text-main">
+                        <h3 className="text-lg font-bold text-main">
                           {story.title}
                         </h3>
                       </div>
@@ -567,7 +567,7 @@ export function About() {
             Common questions about my services and work process.
           </p>
         </div>
-        <div className="max-w-3xl mx-auto bg-surface rounded-2xl p-6 md:p-8 border border-border shadow-sm">
+        <div className="max-w-5xl mx-auto bg-surface rounded-2xl p-6 md:p-8 border border-border shadow-sm">
           {faqs.map((faq, index) => (
             <AccordionItem
               key={`${faq.q}-${index}`}
