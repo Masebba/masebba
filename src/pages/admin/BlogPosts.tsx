@@ -9,64 +9,54 @@ import { StatusBadge } from '../../components/admin/StatusBadge';
 import { BlogPost } from '../../types';
 import { PlusIcon, EditIcon, TrashIcon, FileTextIcon } from 'lucide-react';
 import { useBlogPosts } from '../../lib/hooks/useBlogPosts';
-import { Spinner } from '../../components/ui/Spinner';
+
 export function BlogPosts() {
   const navigate = useNavigate();
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [postToDelete, setPostToDelete] = useState<string | null>(null);
-  const [, setIsDeleting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { posts, loading, deletePost } = useBlogPosts();
+
   const handleDeletePost = async () => {
-    if (postToDelete) {
-      setIsDeleting(true);
-      try {
-        await deletePost(postToDelete);
-        setPostToDelete(null);
-      } catch (error) {
-        console.error('Error deleting post:', error);
-        alert('Failed to delete post.');
-      } finally {
-        setIsDeleting(false);
-      }
+    if (!postToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const result = await deletePost(postToDelete);
+      if (result?.error) throw new Error(result.error);
+      setPostToDelete(null);
+      setIsDeleteModalOpen(false);
+    } catch (error) {
+      console.error('Error deleting post:', error);
+      alert('Failed to delete post.');
+    } finally {
+      setIsDeleting(false);
     }
   };
+
   const columns = [
-  {
-    header: 'Title',
-    accessor: 'title' as keyof BlogPost,
-    className: 'w-1/2 font-medium text-main'
-  },
-  {
-    header: 'Status',
-    cell: (item: BlogPost) => <StatusBadge status={item.status} />
-  },
-  {
-    header: 'Date',
-    cell: (item: BlogPost) => new Date(item.createdAt).toLocaleDateString()
-  },
-  {
-    header: 'Actions',
-    className: 'text-right',
-    cell: (item: BlogPost) =>
-    <div className="flex justify-end gap-2">
-          <button
-        onClick={() => navigate(`/admin/blog/edit/${item.id}`)}
-        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded">
-        
+    {
+      header: 'Title',
+      accessor: 'title' as keyof BlogPost,
+      className: 'w-1/2 font-medium text-main',
+    },
+    { header: 'Status', cell: (item: BlogPost) => <StatusBadge status={item.status} /> },
+    { header: 'Date', cell: (item: BlogPost) => new Date(item.createdAt).toLocaleDateString() },
+    {
+      header: 'Actions',
+      className: 'text-right',
+      cell: (item: BlogPost) => (
+        <div className="flex justify-end gap-2">
+          <button onClick={() => navigate(`/admin/blog/edit/${item.id}`)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded" disabled={isDeleting}>
             <EditIcon className="w-4 h-4" />
           </button>
-          <button
-        onClick={() => {
-          setPostToDelete(item.id);
-          setIsDeleteModalOpen(true);
-        }}
-        className="p-1.5 text-red-600 hover:bg-red-50 rounded">
-        
+          <button onClick={() => { setPostToDelete(item.id); setIsDeleteModalOpen(true); }} className="p-1.5 text-red-600 hover:bg-red-50 rounded" disabled={isDeleting}>
             <TrashIcon className="w-4 h-4" />
           </button>
         </div>
-
-  }];
+      ),
+    },
+  ];
 
   return (
     <div className="space-y-8">
@@ -82,26 +72,22 @@ export function BlogPosts() {
       </div>
 
       <Card padding="none" className="overflow-hidden">
-        {loading ?
-        <div className="flex justify-center items-center p-12">
-            <Spinner size="lg" />
-          </div> :
-
         <DataTable
           columns={columns}
           data={posts}
           keyExtractor={(item) => item.id}
+          loading={loading}
+          loadingRows={6}
           emptyState={
-          <EmptyState
-            icon={FileTextIcon}
-            title="No blog posts yet"
-            description="Start sharing your thoughts and expertise."
-            actionLabel="Create First Post"
-            onAction={() => navigate('/admin/blog/new')} />
-
-          } />
-
-        }
+            <EmptyState
+              icon={FileTextIcon}
+              title="No blog posts yet"
+              description="Start sharing your thoughts and expertise."
+              actionLabel="Create First Post"
+              onAction={() => navigate('/admin/blog/new')}
+            />
+          }
+        />
       </Card>
 
       <ConfirmDialog
@@ -109,8 +95,8 @@ export function BlogPosts() {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={handleDeletePost}
         title="Delete Blog Post"
-        message="Are you sure you want to delete this post? This action cannot be undone." />
-      
-    </div>);
-
+        message="Are you sure you want to delete this post? This action cannot be undone."
+      />
+    </div>
+  );
 }

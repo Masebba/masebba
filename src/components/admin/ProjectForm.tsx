@@ -3,11 +3,11 @@ import { Input } from "../ui/Input";
 import { Textarea } from "../ui/Textarea";
 import { Button } from "../ui/Button";
 import { Project } from "../../types";
-import { uploadImage } from "../../lib/storage";
+import { prepareInlineImageDataUrl } from "../../lib/media";
 
 interface ProjectFormProps {
   initialData?: Partial<Project>;
-  onSubmit: (data: Partial<Project>) => void;
+  onSubmit: (data: Partial<Project>) => Promise<void> | void;
   onCancel: () => void;
 }
 
@@ -47,21 +47,12 @@ function normalizeTechList(value: string): string[] {
     .filter((item, index, array) => array.indexOf(item) === index);
 }
 
-function safeFileName(name: string): string {
-  return name.replace(/[^a-zA-Z0-9._-]/g, "_");
-}
-
 type ImageFieldKey = "coverImage" | "detailImage1" | "detailImage2";
 
 interface ImageFileState {
   file: File | null;
   preview: string;
 }
-
-const emptyImageState: ImageFileState = {
-  file: null,
-  preview: "",
-};
 
 function ImageUploadSection({
   label,
@@ -119,23 +110,6 @@ function ImageUploadSection({
       </div>
     </div>
   );
-}
-
-async function uploadSelectedImage(
-  file: File,
-  fieldKey: ImageFieldKey,
-  setUploadProgress: (value: number) => void,
-): Promise<string> {
-  const path = `projects/${fieldKey}/${Date.now()}-${safeFileName(file.name)}`;
-  const result = await uploadImage(file, path, (progress) => {
-    setUploadProgress(progress);
-  });
-
-  if (result.error || !result.url) {
-    throw new Error(result.error || "Failed to upload image.");
-  }
-
-  return result.url;
 }
 
 export function ProjectForm({
@@ -378,7 +352,15 @@ export function ProjectForm({
           : "Project detail image 2";
 
     setActiveUploadLabel(label);
-    const uploadedUrl = await uploadSelectedImage(file, fieldKey, setUploadProgress);
+    setUploadProgress(15);
+    const uploadedUrl = await prepareInlineImageDataUrl(file, {
+      maxWidth: fieldKey === "coverImage" ? 1600 : 1200,
+      maxHeight: 1200,
+      quality: 0.82,
+      maxInputBytes: 5 * 1024 * 1024,
+      maxOutputBytes: fieldKey === "coverImage" ? 220 * 1024 : 180 * 1024,
+    });
+    setUploadProgress(100);
     return uploadedUrl;
   };
 
@@ -417,7 +399,7 @@ export function ProjectForm({
         showOnHome: Boolean(formData.showOnHome),
       };
 
-      onSubmit(safeData);
+      await onSubmit(safeData);
     } catch (err: any) {
       setErrors((prev) => ({
         ...prev,

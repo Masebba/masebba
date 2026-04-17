@@ -1,84 +1,28 @@
-import { useState, useEffect } from "react";
-import {
-  collection,
-  onSnapshot,
-  addDoc,
-  serverTimestamp,
-} from "firebase/firestore";
-import { db } from "../firebase";
-import { collections, updateDocument, deleteDocument } from "../firestore";
-import { ContactMessage } from "../../types";
+import { useEffect, useState } from 'react';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase';
+import { addDocument, collections, deleteDocument, updateDocument } from '../firestore';
+import { cleanText, readCachedValue, toIsoString, toMillis, writeCachedValue } from '../dataHelpers';
+import { ContactMessage } from '../../types';
 
-type ContactMessageInput = {
-  name: string;
-  email: string;
-  subject: string;
-  message: string;
-};
+const MESSAGES_CACHE_KEY = 'portfolio:messages:v2';
 
-function stripHtml(input: string): string {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(input || "", "text/html");
-  return (doc.body.textContent || "").trim();
-}
+function normalizeMessageInput(data: ContactMessageInput): { data?: ContactMessageInput; error?: string } {
+  const name = cleanText(data.name);
+  const email = cleanText(data.email).toLowerCase();
+  const subject = cleanText(data.subject ?? '');
+  const message = cleanText(data.message);
 
-function cleanText(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
-}
+  if (!name) return { error: 'Name is required.' };
+  if (name.length > 80) return { error: 'Name must be 80 characters or less.' };
 
-function normalizeEmail(value: unknown): string {
-  return cleanText(value).toLowerCase();
-}
+  if (!email) return { error: 'Email is required.' };
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { error: 'Enter a valid email address.' };
 
-function isValidEmail(value: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-}
+  if (subject.length > 160) return { error: 'Subject must be 160 characters or less.' };
 
-function toMillis(value: unknown): number {
-  if (!value) return 0;
-
-  if (typeof value === "string") {
-    const parsed = Date.parse(value);
-    return Number.isNaN(parsed) ? 0 : parsed;
-  }
-
-  if (
-    typeof value === "object" &&
-    value &&
-    "toDate" in value &&
-    typeof (value as any).toDate === "function"
-  ) {
-    return (value as any).toDate().getTime();
-  }
-
-  return 0;
-}
-
-function normalizeMessageInput(data: ContactMessageInput): {
-  data?: ContactMessageInput;
-  error?: string;
-} {
-  const payload = data as Record<string, unknown>;
-
-  const name = stripHtml(cleanText(payload.name));
-  const email = normalizeEmail(payload.email);
-  const subject = stripHtml(cleanText(payload.subject));
-  const message = stripHtml(cleanText(payload.message));
-
-  if (!name) return { error: "Name is required." };
-  if (name.length > 120)
-    return { error: "Name must be 120 characters or less." };
-
-  if (!email) return { error: "Email is required." };
-  if (!isValidEmail(email)) return { error: "Enter a valid email address." };
-
-  if (!subject) return { error: "Subject is required." };
-  if (subject.length > 160)
-    return { error: "Subject must be 160 characters or less." };
-
-  if (!message) return { error: "Message is required." };
-  if (message.length > 5000)
-    return { error: "Message must be 5000 characters or less." };
+  if (!message) return { error: 'Message is required.' };
+  if (message.length > 5000) return { error: 'Message must be 5000 characters or less.' };
 
   return {
     data: {
@@ -90,9 +34,33 @@ function normalizeMessageInput(data: ContactMessageInput): {
   };
 }
 
+interface ContactMessageInput {
+  name: string;
+  email: string;
+  subject?: string;
+  message: string;
+}
+
+function normalizeMessageSnapshot(item: any): ContactMessage {
+  return {
+    id: item.id,
+    name: cleanText(item.name),
+    email: cleanText(item.email),
+    subject: cleanText(item.subject),
+    message: cleanText(item.message),
+    status: item.status === 'read' || item.status === 'replied' ? item.status : 'unread',
+    createdAt: toIsoString(item.createdAt),
+    updatedAt: toIsoString(item.updatedAt),
+    createdBy: cleanText(item.createdBy),
+    updatedBy: cleanText(item.updatedBy),
+    deletedAt: toIsoString(item.deletedAt),
+    isDeleted: Boolean(item.isDeleted),
+  } as ContactMessage;
+}
+
 export function useMessages() {
-  const [messages, setMessages] = useState<ContactMessage[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [messages, setMessages] = useState<ContactMessage[]>(() => readCachedValue<ContactMessage[]>(MESSAGES_CACHE_KEY, []).filter((message) => !message.isDeleted));
+  const [loading, setLoading] = useState(messages.length === 0);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -100,16 +68,12 @@ export function useMessages() {
       collection(db, collections.contactMessages),
       (snapshot) => {
         const data = snapshot.docs
-          .map((docSnap) => ({
-            id: docSnap.id,
-            ...docSnap.data(),
-          }))
-          .sort(
-            (a, b) =>
-              toMillis((b as any).createdAt) - toMillis((a as any).createdAt),
-          ) as ContactMessage[];
+          .map((docSnap) => normalizeMessageSnapshot({ id: docSnap.id, ...docSnap.data() }))
+          .filter((message) => !message.isDeleted)
+          .sort((a, b) => toMillis(b.createdAt) - toMillis(a.createdAt));
 
         setMessages(data);
+        writeCachedValue(MESSAGES_CACHE_KEY, data);
         setError(null);
         setLoading(false);
       },
@@ -128,23 +92,18 @@ export function useMessages() {
       throw new Error(normalized.error);
     }
 
-    await addDoc(collection(db, collections.contactMessages), {
+    await addDocument<ContactMessage>(collections.contactMessages, {
       ...normalized.data,
-      status: "unread",
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+      status: 'unread',
+    } as Partial<ContactMessage>);
 
     return true;
   };
 
-  const updateMessageStatus = async (
-    id: string,
-    status: ContactMessage["status"],
-  ) => {
-    const allowed = new Set(["unread", "read", "replied"]);
+  const updateMessageStatus = async (id: string, status: ContactMessage['status']) => {
+    const allowed = new Set(['unread', 'read', 'replied']);
     if (!allowed.has(String(status))) {
-      throw new Error("Invalid message status.");
+      throw new Error('Invalid message status.');
     }
 
     return updateDocument<ContactMessage>(collections.contactMessages, id, {

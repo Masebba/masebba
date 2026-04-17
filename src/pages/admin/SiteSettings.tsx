@@ -12,15 +12,8 @@ import type { SiteSettings as SiteSettingsType, SocialLink } from "../../types";
 import { useSiteSettings } from "../../lib/hooks/useSiteSettings";
 import { useSocialLinks } from "../../lib/hooks/useSocialLinks";
 import { PlusIcon, EditIcon, TrashIcon, CheckCircleIcon } from "lucide-react";
+import { prepareInlineImageDataUrl, prepareInlineFileDataUrl } from "../../lib/media";
 
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("Failed to read file locally."));
-    reader.readAsDataURL(file);
-  });
-}
 
 export function SiteSettings() {
   const { settings, loading: settingsLoading, updateSettings } = useSiteSettings();
@@ -156,11 +149,47 @@ export function SiteSettings() {
         ...basePayload,
       };
 
-      if (heroBgFile) payload.heroBackgroundImageUrl = await fileToDataUrl(heroBgFile);
-      if (aboutImageFile) payload.aboutImageUrl = await fileToDataUrl(aboutImageFile);
-      if (resumeFile) payload.resumeUrl = await fileToDataUrl(resumeFile);
-      if (logoFile) payload.logoUrl = await fileToDataUrl(logoFile);
-      if (faviconFile) payload.faviconUrl = await fileToDataUrl(faviconFile);
+      if (heroBgFile) {
+        payload.heroBackgroundImageUrl = await prepareInlineImageDataUrl(heroBgFile, {
+          maxWidth: 1800,
+          maxHeight: 1200,
+          quality: 0.82,
+          maxInputBytes: 5 * 1024 * 1024,
+          maxOutputBytes: 220 * 1024,
+        });
+      }
+      if (aboutImageFile) {
+        payload.aboutImageUrl = await prepareInlineImageDataUrl(aboutImageFile, {
+          maxWidth: 1200,
+          maxHeight: 1200,
+          quality: 0.82,
+          maxInputBytes: 5 * 1024 * 1024,
+          maxOutputBytes: 220 * 1024,
+        });
+      }
+      if (resumeFile) {
+        payload.resumeUrl = await prepareInlineFileDataUrl(resumeFile, {
+          maxInputBytes: 300 * 1024,
+        });
+      }
+      if (logoFile) {
+        payload.logoUrl = await prepareInlineImageDataUrl(logoFile, {
+          maxWidth: 256,
+          maxHeight: 256,
+          quality: 0.9,
+          maxInputBytes: 1024 * 1024,
+          maxOutputBytes: 80 * 1024,
+        });
+      }
+      if (faviconFile) {
+        payload.faviconUrl = await prepareInlineImageDataUrl(faviconFile, {
+          maxWidth: 128,
+          maxHeight: 128,
+          quality: 0.9,
+          maxInputBytes: 512 * 1024,
+          maxOutputBytes: 40 * 1024,
+        });
+      }
 
       const result = await updateSettings(payload);
       if (result.error) {

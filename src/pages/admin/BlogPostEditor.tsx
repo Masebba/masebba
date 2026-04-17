@@ -1,4 +1,3 @@
-// Looks like this is not storing coverImage to firestore so the coverImage dont display at client side
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeftIcon, SaveIcon } from "lucide-react";
@@ -11,6 +10,8 @@ import { RichTextEditor } from "../../components/admin/RichTextEditor";
 import { BlogPost } from "../../types";
 import { useBlogPosts } from "../../lib/hooks/useBlogPosts";
 import { Spinner } from "../../components/ui/Spinner";
+import { sanitizeHtml } from "../../lib/sanitize";
+import { prepareInlineImageDataUrl } from "../../lib/media";
 
 type FormErrors = Partial<
   Record<
@@ -46,47 +47,6 @@ function stripHtmlForValidation(html: string): string {
   return (doc.body.textContent || "").trim();
 }
 
-function sanitizeHtml(html: string): string {
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html || "", "text/html");
-
-  doc
-    .querySelectorAll("script, iframe, object, embed, link, meta, base")
-    .forEach((el) => el.remove());
-
-  doc.querySelectorAll("*").forEach((el) => {
-    [...el.attributes].forEach((attr) => {
-      const name = attr.name.toLowerCase();
-      const value = attr.value.trim().toLowerCase();
-
-      if (name.startsWith("on")) {
-        el.removeAttribute(attr.name);
-      }
-
-      if (
-        (name === "href" || name === "src") &&
-        value.startsWith("javascript:")
-      ) {
-        el.removeAttribute(attr.name);
-      }
-    });
-  });
-
-  return doc.body.innerHTML;
-}
-
-function safeFileName(name: string): string {
-  return name.replace(/[^a-zA-Z0-9._-]/g, "_");
-}
-
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(new Error("Failed to read image file."));
-    reader.readAsDataURL(file);
-  });
-}
 
 export function BlogPostEditor() {
   const { id } = useParams();
@@ -283,7 +243,13 @@ export function BlogPostEditor() {
 
       if (coverFile) {
         setUploadProgress(25);
-        coverImage = await fileToDataUrl(coverFile);
+        coverImage = await prepareInlineImageDataUrl(coverFile, {
+          maxWidth: 1400,
+          maxHeight: 1400,
+          quality: 0.82,
+          maxInputBytes: 5 * 1024 * 1024,
+          maxOutputBytes: 250 * 1024,
+        });
         setUploadProgress(100);
       }
 

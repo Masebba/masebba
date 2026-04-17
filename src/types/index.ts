@@ -41,6 +41,12 @@ export interface Service {
   icon: string;
   order: number;
   isVisible: boolean;
+  createdAt?: any;
+  updatedAt?: any;
+  createdBy?: string;
+  updatedBy?: string;
+  deletedAt?: any;
+  isDeleted?: boolean;
 }
 
 export interface Project {
@@ -59,6 +65,11 @@ export interface Project {
   order: number;
   homeOrder: number;
   createdAt: any;
+  updatedAt?: any;
+  createdBy?: string;
+  updatedBy?: string;
+  deletedAt?: any;
+  isDeleted?: boolean;
 }
 
 export interface BlogPost {
@@ -74,7 +85,11 @@ export interface BlogPost {
   status: 'draft' | 'published';
   publishedAt?: string;
   createdAt: any;
-  updatedAt: string;
+  updatedAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
+  deletedAt?: any;
+  isDeleted?: boolean;
 }
 
 export interface ContactMessage {
@@ -82,8 +97,14 @@ export interface ContactMessage {
   name: string;
   email: string;
   message: string;
+  subject?: string;
   status: 'unread' | 'read' | 'replied';
   createdAt: any;
+  updatedAt?: any;
+  createdBy?: string;
+  updatedBy?: string;
+  deletedAt?: any;
+  isDeleted?: boolean;
 }
 
 export interface SocialLink {
@@ -91,4 +112,10 @@ export interface SocialLink {
   platform: string;
   url: string;
   isVisible: boolean;
+  createdAt?: any;
+  updatedAt?: any;
+  createdBy?: string;
+  updatedBy?: string;
+  deletedAt?: any;
+  isDeleted?: boolean;
 }

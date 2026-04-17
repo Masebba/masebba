@@ -1,10 +1,8 @@
 import {
-  ref,
-  uploadBytesResumable,
-  getDownloadURL,
-  deleteObject,
-} from "firebase/storage";
-import { storage } from "./firebase";
+  formatBytes,
+  prepareInlineFileDataUrl,
+  prepareInlineImageDataUrl,
+} from "./media";
 
 export interface UploadProgress {
   progress: number;
@@ -12,107 +10,63 @@ export interface UploadProgress {
   downloadURL: string | null;
 }
 
-const MAX_IMAGE_SIZE_BYTES = 5 * 1024 * 1024;
-const MAX_FILE_SIZE_BYTES = 15 * 1024 * 1024;
-const ALLOWED_IMAGE_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "image/avif",
-]);
-
-const ALLOWED_DOCUMENT_TYPES = new Set([
-  "application/pdf",
-  "application/msword",
-  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-]);
-
-function normalizeStoragePath(path: string): string {
+function normalizeInlinePath(path: string): string {
   return path.replace(/^\/+/, "").trim();
 }
 
-function uploadFileInternal(
-  file: File,
-  path: string,
-  allowedTypes: Set<string>,
-  maxSizeBytes: number,
+function reportProgress(
   onProgress?: (progress: number) => void,
-): Promise<{ url: string | null; error: string | null }> {
-  return new Promise((resolve) => {
-    if (!file) {
-      resolve({ url: null, error: "No file selected." });
-      return;
-    }
-
-    if (!allowedTypes.has(file.type)) {
-      resolve({
-        url: null,
-        error: "Unsupported file type.",
-      });
-      return;
-    }
-
-    if (file.size > maxSizeBytes) {
-      resolve({ url: null, error: "File size is too large." });
-      return;
-    }
-
-    const storagePath = normalizeStoragePath(path);
-    if (!storagePath) {
-      resolve({ url: null, error: "Invalid upload path." });
-      return;
-    }
-
-    const storageRef = ref(storage, storagePath);
-    const uploadTask = uploadBytesResumable(storageRef, file);
-
-    uploadTask.on(
-      "state_changed",
-      (snapshot) => {
-        const progress =
-          (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-        onProgress?.(progress);
-      },
-      (error) => {
-        resolve({ url: null, error: error.message });
-      },
-      async () => {
-        try {
-          const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-          resolve({ url: downloadURL, error: null });
-        } catch (error: any) {
-          resolve({ url: null, error: error.message });
-        }
-      },
-    );
-  });
+  value = 100,
+): void {
+  onProgress?.(value);
 }
 
-export const uploadImage = (
+export async function uploadImage(
   file: File,
   path: string,
   onProgress?: (progress: number) => void,
-): Promise<{ url: string | null; error: string | null }> => {
-  return uploadFileInternal(file, path, ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE_BYTES, onProgress);
-};
-
-export const uploadFile = (
-  file: File,
-  path: string,
-  onProgress?: (progress: number) => void,
-): Promise<{ url: string | null; error: string | null }> => {
-  return uploadFileInternal(file, path, ALLOWED_DOCUMENT_TYPES, MAX_FILE_SIZE_BYTES, onProgress);
-};
-
-export const deleteImage = async (
-  urlOrPath: string,
-): Promise<{ error: string | null }> => {
+): Promise<{ url: string | null; error: string | null }> {
   try {
-    const imageRef = ref(storage, urlOrPath);
-    await deleteObject(imageRef);
-    return { error: null };
+    normalizeInlinePath(path);
+    reportProgress(onProgress, 10);
+    const url = await prepareInlineImageDataUrl(file, {
+      maxWidth: 1600,
+      maxHeight: 1600,
+      quality: 0.82,
+      maxInputBytes: 5 * 1024 * 1024,
+    });
+    reportProgress(onProgress, 100);
+    return { url, error: null };
   } catch (error: any) {
-    return { error: error.message };
+    return { url: null, error: error?.message || "Failed to prepare image." };
   }
-};
+}
+
+export async function uploadFile(
+  file: File,
+  path: string,
+  onProgress?: (progress: number) => void,
+): Promise<{ url: string | null; error: string | null }> {
+  try {
+    normalizeInlinePath(path);
+    reportProgress(onProgress, 10);
+    const url = await prepareInlineFileDataUrl(file, {
+      maxInputBytes: 300 * 1024,
+    });
+    reportProgress(onProgress, 100);
+    return { url, error: null };
+  } catch (error: any) {
+    return { url: null, error: error?.message || "Failed to prepare file." };
+  }
+}
+
+export async function deleteImage(
+  urlOrPath: string,
+): Promise<{ error: string | null }> {
+  // Spark-plan friendly: we do not rely on remote Storage deletes.
+  // Returning success keeps old call sites safe.
+  void urlOrPath;
+  return { error: null };
+}
+
+export { formatBytes };

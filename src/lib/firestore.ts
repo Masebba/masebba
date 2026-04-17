@@ -3,31 +3,49 @@ import {
   doc,
   addDoc,
   updateDoc,
-  deleteDoc,
   serverTimestamp,
   Timestamp,
-} from "firebase/firestore";
-import { db } from "./firebase";
+} from 'firebase/firestore';
+import { auth, db } from './firebase';
 
 export const collections = {
-  admin: "admin",
-  siteSettings: "siteSettings",
-  services: "services",
-  projects: "projects",
-  blogPosts: "blogPosts",
-  contactMessages: "contactMessages",
-  socialLinks: "socialLinks",
+  admin: 'admin',
+  siteSettings: 'siteSettings',
+  services: 'services',
+  projects: 'projects',
+  blogPosts: 'blogPosts',
+  contactMessages: 'contactMessages',
+  socialLinks: 'socialLinks',
 };
 
-export const addDocument = async <T>(
-  collectionName: string,
-  data: Partial<T>,
-) => {
+function buildAuditFields(isCreate: boolean): Record<string, unknown> {
+  const user = auth.currentUser;
+  const email = user?.email?.toLowerCase() || '';
+  const displayName = user?.displayName?.trim() || '';
+  const uid = user?.uid || '';
+
+  const audit: Record<string, unknown> = {
+    updatedAt: serverTimestamp(),
+    updatedBy: uid || null,
+    updatedByEmail: email || null,
+    updatedByName: displayName || null,
+  };
+
+  if (isCreate) {
+    audit.createdAt = serverTimestamp();
+    audit.createdBy = uid || null;
+    audit.createdByEmail = email || null;
+    audit.createdByName = displayName || null;
+  }
+
+  return audit;
+}
+
+export const addDocument = async <T>(collectionName: string, data: Partial<T>) => {
   try {
     const docRef = await addDoc(collection(db, collectionName), {
       ...data,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      ...buildAuditFields(true),
     });
     return { id: docRef.id, error: null };
   } catch (error: any) {
@@ -35,15 +53,11 @@ export const addDocument = async <T>(
   }
 };
 
-export const updateDocument = async <T>(
-  collectionName: string,
-  id: string,
-  data: Partial<T>,
-) => {
+export const updateDocument = async <T>(collectionName: string, id: string, data: Partial<T>) => {
   try {
     await updateDoc(doc(db, collectionName, id), {
       ...data,
-      updatedAt: serverTimestamp(),
+      ...buildAuditFields(false),
     });
     return { error: null };
   } catch (error: any) {
@@ -53,7 +67,13 @@ export const updateDocument = async <T>(
 
 export const deleteDocument = async (collectionName: string, id: string) => {
   try {
-    await deleteDoc(doc(db, collectionName, id));
+    await updateDoc(doc(db, collectionName, id), {
+      isDeleted: true,
+      deletedAt: serverTimestamp(),
+      deletedBy: auth.currentUser?.uid || null,
+      deletedByEmail: auth.currentUser?.email?.toLowerCase() || null,
+      ...buildAuditFields(false),
+    });
     return { error: null };
   } catch (error: any) {
     return { error: error.message };
@@ -61,6 +81,6 @@ export const deleteDocument = async (collectionName: string, id: string) => {
 };
 
 export const formatTimestamp = (timestamp: Timestamp | undefined): string => {
-  if (!timestamp) return "";
+  if (!timestamp) return '';
   return timestamp.toDate().toLocaleDateString();
 };

@@ -1,12 +1,13 @@
-import React, { useMemo } from "react";
-import { Link } from "react-router-dom";
-import { ArrowRightIcon } from "lucide-react";
-import { ProjectCard } from "../ProjectCard";
-import { Button } from "../ui/Button";
-import { useProjects } from "../../lib/hooks/useProjects";
+import React, { useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowRightIcon } from 'lucide-react';
+import { ProjectCard } from '../ProjectCard';
+import { Button } from '../ui/Button';
+import { SkeletonProjectCard } from '../ui/Skeleton';
+import { useProjects } from '../../lib/hooks/useProjects';
 
 export function FeaturedProjects() {
-  const { projects } = useProjects();
+  const { projects, loading } = useProjects();
 
   const featuredProjects = useMemo(() => {
     const homeSelected = [...projects]
@@ -20,6 +21,27 @@ export function FeaturedProjects() {
     return [...projects].slice(0, 3);
   }, [projects]);
 
+  if (loading && featuredProjects.length === 0) {
+    return (
+      <section className="py-10 md:py-22 bg-surface/30">
+        <div className="mx-auto w-full max-w-6xl px-4">
+          <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+            <div className="space-y-3">
+              <div className="h-4 w-24 rounded-full bg-surface animate-pulse" />
+              <div className="h-8 w-64 rounded-full bg-surface animate-pulse" />
+            </div>
+            <div className="h-10 w-40 rounded-full bg-surface animate-pulse" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <SkeletonProjectCard key={index} />
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   if (featuredProjects.length === 0) return null;
 
   return (
@@ -27,12 +49,8 @@ export function FeaturedProjects() {
       <div className="mx-auto w-full max-w-6xl px-4">
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
           <div className="max-w-2xl">
-            <h2 className="text-sm font-bold text-primary uppercase tracking-widest mb-2">
-              Projects
-            </h2>
-            <h3 className="text-3xl md:text-4xl font-bold text-main">
-              Recent Works
-            </h3>
+            <h2 className="text-sm font-bold text-primary uppercase tracking-widest mb-2">Projects</h2>
+            <h3 className="text-3xl md:text-4xl font-bold text-main">Recent Works</h3>
           </div>
           <Link to="/portfolio">
             <Button variant="ghost" className="gap-2">
