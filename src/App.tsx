@@ -24,9 +24,39 @@ import { BlogPosts } from './pages/admin/BlogPosts';
 import { BlogPostEditor } from './pages/admin/BlogPostEditor';
 import { Messages } from './pages/admin/Messages';
 import { AdminServices } from './pages/admin/Services';
+
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen flex items-center justify-center p-6 text-center">
+          <div className="max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h1 className="text-xl font-semibold text-gray-900">The app hit a startup error</h1>
+            <p className="mt-3 text-sm text-gray-600">
+              Check your Firebase environment variables and refresh the page. The console will show the exact missing value.
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 export function App() {
   return (
-    <ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
       <AuthProvider>
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <Routes>
@@ -67,6 +97,7 @@ export function App() {
           </Routes>
         </BrowserRouter>
       </AuthProvider>
-    </ThemeProvider>);
+      </ThemeProvider>
+    </ErrorBoundary>);
 
 }
