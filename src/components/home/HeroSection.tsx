@@ -54,7 +54,7 @@ export function HeroSection() {
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center flex flex-col items-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface border border-border text-sm font-medium text-muted mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <span className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-blink" />
+            <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-blink" />
             Available for new opportunities
           </div>
 
