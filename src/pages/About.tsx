@@ -558,27 +558,28 @@ export function About() {
         </div>
       </div>
 
-      <div className="m-24">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-main mb-4">
-            Frequently Asked Questions
-          </h2>
-          <p className="text-muted max-w-2xl mx-auto">
-            Common questions about my services and work process.
-          </p>
-        </div>
-        <div className="max-w-5xl mx-auto bg-surface rounded-2xl p-6 md:p-8 border border-border shadow-sm">
-          {faqs.map((faq, index) => (
-            <AccordionItem
-              key={`${faq.q}-${index}`}
-              question={faq.q}
-              answer={faq.a}
-              isOpen={openFaqIndex === index}
-              onClick={() => toggleFaq(index)}
-            />
-          ))}
-        </div>
-      </div>
+      <div className="mx-4 my-12 md:mx-8 lg:m-24">
+  <div className="text-center mb-12">
+    <h2 className="text-3xl font-bold text-main mb-4">
+      Frequently Asked Questions
+    </h2>
+    <p className="text-muted max-w-2xl mx-auto">
+      Common questions about my services and work process.
+    </p>
+  </div>
+
+  <div className="max-w-5xl mx-auto bg-surface rounded-2xl p-6 md:p-8 border border-border shadow-sm">
+    {faqs.map((faq, index) => (
+      <AccordionItem
+        key={`${faq.q}-${index}`}
+        question={faq.q}
+        answer={faq.a}
+        isOpen={openFaqIndex === index}
+        onClick={() => toggleFaq(index)}
+      />
+    ))}
+  </div>
+</div>
     </div>
   );
 }

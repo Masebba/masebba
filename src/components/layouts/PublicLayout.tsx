@@ -199,16 +199,16 @@ export function PublicLayout() {
 
       <footer className="border-t border-border bg-surface">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-            <div className="lg:col-span-1">
-              <Link to="/" className="block mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 text-center text-center items-center">
+            <div className="lg:col-span-1 ">
+              <Link to="/" className="flex mb-4 text-center justify-center ">
                 {Logo}
               </Link>
               <p className="text-sm text-muted leading-relaxed mb-6">
                 {settings.siteDescription ||
                   "Web and Mobile Application Developer. Leave the Designing and Development to me."}
               </p>
-              <div className="flex gap-3 flex-wrap">
+              <div className="flex gap-3 flex-wrap text-center justify-center ">
                 {socialLinks.slice(0, 4).map((link) => {
                   const Icon = getSocialIcon(link.platform);
                   return (
@@ -227,24 +227,7 @@ export function PublicLayout() {
               </div>
             </div>
 
-            <div>
-              <h4 className="text-sm font-bold text-main uppercase tracking-wider mb-4">
-                Quick Links
-              </h4>
-              <ul className="space-y-3">
-                {navLinks.map((link) => (
-                  <li key={link.name}>
-                    <Link
-                      to={link.path}
-                      className="text-sm text-muted hover:text-primary transition-colors"
-                    >
-                      {link.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
+        
             <div>
               <h4 className="text-sm font-bold text-main uppercase tracking-wider mb-4">
                 Services
@@ -270,6 +253,24 @@ export function PublicLayout() {
                 <li>
                   <span className="text-sm text-muted">IT Consulting</span>
                 </li>
+              </ul>
+            </div>
+
+            <div>
+              <h4 className="text-sm font-bold text-main uppercase tracking-wider mb-4">
+                Quick Links
+              </h4>
+              <ul className="space-y-3">
+                {navLinks.map((link) => (
+                  <li key={link.name}>
+                    <Link
+                      to={link.path}
+                      className="text-sm text-muted hover:text-primary transition-colors"
+                    >
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
 
