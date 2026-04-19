@@ -116,7 +116,7 @@ export function Contact() {
     : "";
 
   return (
-    <div className="container mx-auto px-4 py-16 md:py-24 max-w-6xl">
+    <div className="container mx-auto px-4 py-10 md:py-18 max-w-5xl">
       <div className="text-center mb-16 max-w-2xl mx-auto">
         <h1 className="text-4xl md:text-5xl font-bold text-main mb-6">
           Let's Work Together
@@ -127,11 +127,11 @@ export function Contact() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-1 space-y-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-16">
+        <div className="lg:col-span-1 space-y-6">
           <div>
-            <h3 className="text-2xl font-bold text-main mb-6">Contact Info</h3>
-            <div className="space-y-1">
+            <h3 className="text-2xl font-bold text-main mb-2">Contact Info</h3>
+            <div className="space-y-1 p-1">
               <ContactInfoCard
                 icon={MailIcon}
                 label="Email"
@@ -160,18 +160,18 @@ export function Contact() {
           </div>
 
           {socialLinks.length > 0 && (
-            <div className="pt-4 border-t border-border">
-              <h3 className="text-lg font-bold text-main mb-4">
+            <div className="pt-2 border-t border-border">
+              <h3 className="text-lg font-bold text-main mb-1">
                 Connect With Me
               </h3>
-              <div className="flex gap-3 flex-wrap">
+              <div className="flex gap-1 flex-wrap">
                 {socialLinks.map((link) => (
                   <a
                     key={link.id}
                     href={link.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="px-4 py-2 rounded-full bg-surface border border-border text-sm font-medium text-muted hover:bg-primary hover:text-background hover:border-primary transition-colors"
+                    className="px-2 py-1 rounded-full bg-surface border border-border text-xs font-medium text-muted hover:bg-primary hover:text-background hover:border-primary transition-colors"
                   >
                     {link.platform}
                   </a>
@@ -196,7 +196,7 @@ export function Contact() {
         </div>
 
         <div className="lg:col-span-2">
-          <Card padding="lg" className="shadow-xl">
+          <Card padding="lg" className="shadow-xl max-w-xl">
             {isSuccess ? (
               <div className="flex flex-col items-center justify-center py-12 text-center h-full min-h-[400px]">
                 <div className="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mb-6">
@@ -218,9 +218,9 @@ export function Contact() {
                 </Button>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-2">
                 <div>
-                  <h3 className="text-2xl font-bold text-main mb-2">
+                  <h3 className="text-2xl font-bold text-main mb-1">
                     Send Me a Message
                   </h3>
                   <p className="text-muted">
@@ -228,7 +228,7 @@ export function Contact() {
                   </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                   <Input
                     id="name"
                     label="Your Name"
@@ -258,7 +258,7 @@ export function Contact() {
                 <Textarea
                   id="message"
                   label="Your Message"
-                  rows={6}
+                  rows={4}
                   value={formData.message}
                   onChange={handleChange}
                   error={errors.message}
