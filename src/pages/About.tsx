@@ -408,7 +408,7 @@ export function About() {
         </div>
       </div>
 
-      <div className="mb-24">
+      <div className="mb-24 ">
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-main mb-4">Work Experience</h2>
           <p className="text-muted max-w-2xl mx-auto">
@@ -416,15 +416,15 @@ export function About() {
             work with.
           </p>
         </div>
-        <div className="max-w-3xl mx-auto space-y-8">
+        <div className="max-w-3xl mx-auto space-y-8 ">
           {experiences.map((exp, index) => (
             <Card
               key={`${exp.role}-${index}`}
-              padding="lg"
+              padding="md"
               className="relative overflow-hidden group hover:border-primary transition-colors"
             >
               <div className="absolute top-0 left-0 w-1 h-full bg-primary/20 group-hover:bg-primary transition-colors" />
-              <div className="flex flex-col md:flex-row md:items-center justify-between mb-4 gap-4">
+              <div className="flex flex-col md:flex-row md:items-center justify-between mb-1 gap-4">
                 <div>
                   <h3 className="text-xl font-bold text-main">{exp.role}</h3>
                   <p className="text-primary font-medium">{exp.company}</p>
@@ -432,7 +432,7 @@ export function About() {
                 <div className="flex items-center gap-3 flex-wrap">
                   {exp.type ? (
                     <span
-                      className={`px-2.5 py-1 rounded-md text-xs font-semibold tracking-wide ${getBadgeStyle(exp.type)}`}
+                      className={`bg-surface text-muted px-2.5 py-1 rounded-md text-xs font-semibold tracking-wide ${getBadgeStyle(exp.type)}`}
                     >
                       {exp.type}
                     </span>
@@ -442,7 +442,7 @@ export function About() {
                   </span>
                 </div>
               </div>
-              <p className="text-muted leading-relaxed">{exp.description}</p>
+              <p className="text-muted bg-surface leading-relaxed">{exp.description}</p>
             </Card>
           ))}
         </div>
