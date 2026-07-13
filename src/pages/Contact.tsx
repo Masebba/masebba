@@ -40,6 +40,7 @@ export function Contact() {
   >({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const validateForm = () => {
     const newErrors: Partial<Record<keyof ContactFormData, string>> = {};
@@ -65,6 +66,7 @@ export function Contact() {
     if (!validateForm()) return;
 
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
       await addMessage({
         name: formData.name.trim(),
@@ -85,7 +87,7 @@ export function Contact() {
       setTimeout(() => setIsSuccess(false), 5000);
     } catch (error) {
       console.error("Error sending message:", error);
-      alert("Failed to send message. Please try again later.");
+      setSubmitError(error instanceof Error ? error.message : "Failed to send message. Please try again later.");
     } finally {
       setIsSubmitting(false);
     }
@@ -235,6 +237,9 @@ export function Contact() {
                     value={formData.name}
                     onChange={handleChange}
                     error={errors.name}
+                    required
+                    maxLength={80}
+                    autoComplete="name"
                   />
 
                   <Input
@@ -244,6 +249,9 @@ export function Contact() {
                     value={formData.email}
                     onChange={handleChange}
                     error={errors.email}
+                    required
+                    maxLength={254}
+                    autoComplete="email"
                   />
                 </div>
 
@@ -253,6 +261,8 @@ export function Contact() {
                   value={formData.subject}
                   onChange={handleChange}
                   error={errors.subject}
+                  required
+                  maxLength={160}
                 />
 
                 <Textarea
@@ -262,7 +272,15 @@ export function Contact() {
                   value={formData.message}
                   onChange={handleChange}
                   error={errors.message}
+                  required
+                  maxLength={5000}
                 />
+
+                {submitError && (
+                  <p role="alert" className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-600">
+                    {submitError}
+                  </p>
+                )}
 
                 <div className="flex justify-end">
                   <Button

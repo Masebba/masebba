@@ -3,7 +3,7 @@ import { useSiteSettings } from '../../lib/hooks/useSiteSettings';
 import { parseCounters } from '../../lib/settingsContent';
 import { Skeleton } from '../ui/Skeleton';
 
-function useCountUp(target: number, duration: number = 2000, startCounting: boolean = false) {
+function useCountUp(target: number, duration = 2000, startCounting = false) {
   const [count, setCount] = useState(0);
   useEffect(() => {
     if (!startCounting) return;

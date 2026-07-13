@@ -126,6 +126,8 @@ export function AdminLayout() {
           <button
             onClick={() => setIsSidebarOpen(true)}
             className="lg:hidden p-2 -ml-2 text-muted hover:text-main"
+            aria-label="Open admin navigation"
+            aria-expanded={isSidebarOpen}
           >
             <MenuIcon className="w-6 h-6" />
           </button>

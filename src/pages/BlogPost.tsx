@@ -1,23 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { ArrowLeftIcon, CalendarIcon, ClockIcon, UserIcon } from 'lucide-react';
+import { ArrowLeftIcon, CalendarIcon, UserIcon } from 'lucide-react';
 import { useBlogPosts } from '../lib/hooks/useBlogPosts';
 import { sanitizeHtml } from '../lib/sanitize';
 import { BlogPost as BlogPostType } from '../types';
 import { Button } from '../components/ui/Button';
 export function BlogPost() {
   const { slug } = useParams();
-  const { posts } = useBlogPosts(true); // publishedOnly = true
-  const [post, setPost] = useState<BlogPostType | null>(null);
-  const [checked, setChecked] = useState(false);
-  useEffect(() => {
-    if (slug && posts.length > 0) {
-      const found = posts.find((p) => p.slug === slug);
-      setPost(found || null);
-      setChecked(true);
-    }
-  }, [posts, slug]);
-  if (!checked) {
+  const { posts, loading } = useBlogPosts(true);
+  const post: BlogPostType | null = posts.find((item) => item.slug === slug) || null;
+
+  if (loading) {
     return (
       <div className="container mx-auto px-4 py-12 max-w-4xl text-center min-h-[60vh] flex items-center justify-center">
         <p className="text-muted">Loading article...</p>

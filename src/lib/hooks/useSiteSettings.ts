@@ -199,6 +199,5 @@ export function useSiteSettings() {
     }
   };
 
-  return { settings, loading, error, updateSettings, refetch: () => {} };
+  return { settings, loading, error, updateSettings };
 }
-

@@ -32,3 +32,14 @@ body {
   @apply bg-background text-main font-sans antialiased transition-colors duration-300;
   font-family: "Inter", sans-serif;
 }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

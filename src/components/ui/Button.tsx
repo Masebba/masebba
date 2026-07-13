@@ -34,6 +34,7 @@ export function Button({
   const widthClass = fullWidth ? "w-full" : "";
   return (
     <button
+      type={props.type || "button"}
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${widthClass} ${className}`}
       disabled={disabled || isLoading}
       {...props}
@@ -44,6 +45,7 @@ export function Button({
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <circle
             className="opacity-25"

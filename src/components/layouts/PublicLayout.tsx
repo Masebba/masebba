@@ -56,6 +56,11 @@ export function PublicLayout() {
     }
   }, [settings.siteName, settings.faviconUrl]);
 
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }, [location.pathname]);
+
   const navLinks = useMemo(
     () => [
       { name: "Home", path: "/" },
@@ -78,7 +83,7 @@ export function PublicLayout() {
 
   const cvUrl = settings.resumeUrl || "";
   const headerButtonHref = cvUrl || "/contact";
-  const headerButtonLabel = "Download CV";
+  const headerButtonLabel = cvUrl ? "Download CV" : "Contact Me";
   const Logo = settings.logoUrl ? (
     <img
       src={settings.logoUrl}
@@ -153,6 +158,9 @@ export function PublicLayout() {
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                 className="p-2 text-main"
+                aria-label={isMobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+                aria-expanded={isMobileMenuOpen}
+                aria-controls="mobile-navigation"
               >
                 {isMobileMenuOpen ? (
                   <XIcon className="w-6 h-6" />
@@ -165,7 +173,7 @@ export function PublicLayout() {
         </div>
 
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-border bg-background">
+          <div id="mobile-navigation" className="md:hidden border-t border-border bg-background">
             <div className="space-y-1 px-4 pb-3 pt-2">
               {navLinks.map((link) => (
                 <Link
@@ -314,7 +322,7 @@ export function PublicLayout() {
                     className="gap-2 w-full justify-center"
                   >
                     <DownloadIcon className="w-4 h-4" />
-                    Download CV
+                    {headerButtonLabel}
                   </Button>
                 </a>
               </div>

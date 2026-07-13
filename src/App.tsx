@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { ThemeProvider } from './contexts/ThemeContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -7,23 +7,27 @@ import { PublicLayout } from './components/layouts/PublicLayout';
 import { AdminLayout } from './components/layouts/AdminLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 // Public Pages
-import { Home } from './pages/Home';
-import { About } from './pages/About';
-import { Portfolio } from './pages/Portfolio';
-import { PortfolioDetail } from './pages/PortfolioDetail';
-import { Blog } from './pages/Blog';
-import { BlogPost } from './pages/BlogPost';
-import { Contact } from './pages/Contact';
-import { Login } from './pages/Login';
-import { NotFound } from './pages/NotFound';
-// Admin Pages
-import { Dashboard } from './pages/admin/Dashboard';
-import { SiteSettings } from './pages/admin/SiteSettings';
-import { Projects } from './pages/admin/Projects';
-import { BlogPosts } from './pages/admin/BlogPosts';
-import { BlogPostEditor } from './pages/admin/BlogPostEditor';
-import { Messages } from './pages/admin/Messages';
-import { AdminServices } from './pages/admin/Services';
+
+const Home = lazy(() => import('./pages/Home').then((module) => ({ default: module.Home })));
+const About = lazy(() => import('./pages/About').then((module) => ({ default: module.About })));
+const Portfolio = lazy(() => import('./pages/Portfolio').then((module) => ({ default: module.Portfolio })));
+const PortfolioDetail = lazy(() => import('./pages/PortfolioDetail').then((module) => ({ default: module.PortfolioDetail })));
+const Blog = lazy(() => import('./pages/Blog').then((module) => ({ default: module.Blog })));
+const BlogPost = lazy(() => import('./pages/BlogPost').then((module) => ({ default: module.BlogPost })));
+const Contact = lazy(() => import('./pages/Contact').then((module) => ({ default: module.Contact })));
+const Login = lazy(() => import('./pages/Login').then((module) => ({ default: module.Login })));
+const NotFound = lazy(() => import('./pages/NotFound').then((module) => ({ default: module.NotFound })));
+const Dashboard = lazy(() => import('./pages/admin/Dashboard').then((module) => ({ default: module.Dashboard })));
+const SiteSettings = lazy(() => import('./pages/admin/SiteSettings').then((module) => ({ default: module.SiteSettings })));
+const Projects = lazy(() => import('./pages/admin/Projects').then((module) => ({ default: module.Projects })));
+const BlogPosts = lazy(() => import('./pages/admin/BlogPosts').then((module) => ({ default: module.BlogPosts })));
+const BlogPostEditor = lazy(() => import('./pages/admin/BlogPostEditor').then((module) => ({ default: module.BlogPostEditor })));
+const Messages = lazy(() => import('./pages/admin/Messages').then((module) => ({ default: module.Messages })));
+const AdminServices = lazy(() => import('./pages/admin/Services').then((module) => ({ default: module.AdminServices })));
+
+function PageFallback() {
+  return <div className="flex min-h-[50vh] items-center justify-center text-muted" role="status">Loading page…</div>;
+}
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
   constructor(props: { children: React.ReactNode }) {
@@ -59,6 +63,7 @@ export function App() {
       <ThemeProvider>
       <AuthProvider>
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <Suspense fallback={<PageFallback />}>
           <Routes>
             {/* Public Routes */}
             <Route element={<PublicLayout />}>
@@ -95,6 +100,7 @@ export function App() {
               <Route path="messages" element={<Messages />} />
             </Route>
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </AuthProvider>
       </ThemeProvider>

@@ -395,9 +395,11 @@ export function Portfolio() {
                     </div>
 
                     {item.downloadUrl ? (
-                      <Button variant="outline" size="sm" className="gap-2">
-                        <DownloadIcon className="w-4 h-4" /> Download
-                      </Button>
+                      <a href={item.downloadUrl} target="_blank" rel="noopener noreferrer" download>
+                        <span className="inline-flex h-9 items-center justify-center gap-2 rounded-md border-2 border-primary px-3 text-sm font-medium text-primary transition-colors hover:bg-primary hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                          <DownloadIcon className="w-4 h-4" /> Download
+                        </span>
+                      </a>
                     ) : null}
                   </div>
                   <p className="text-muted">{item.description}</p>

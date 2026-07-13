@@ -10,7 +10,7 @@ export function HeroSection() {
   const { settings, loading } = useSiteSettings();
   const { theme } = useTheme();
 
-  const isDarkTheme = theme === 'dark' || theme === 'black' || theme === 'ocean' || theme?.toString().toLowerCase().includes('dark');
+  const isDarkTheme = theme === 'ocean';
 
   const heroOverlay = isDarkTheme
     ? 'linear-gradient(rgba(0,0,0,0.72), rgba(0,0,0,0.72))'

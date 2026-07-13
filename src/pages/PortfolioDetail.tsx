@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import {
@@ -42,17 +42,8 @@ function formatDateValue(value: unknown): string {
 
 export function PortfolioDetail() {
   const { id } = useParams();
-  const { projects } = useProjects();
-  const [project, setProject] = useState<Project | null>(null);
-  const [checked, setChecked] = useState(false);
-
-  useEffect(() => {
-    if (id && projects.length > 0) {
-      const found = projects.find((p) => p.id === id);
-      setProject(found || null);
-      setChecked(true);
-    }
-  }, [projects, id]);
+  const { projects, loading } = useProjects();
+  const project: Project | null = projects.find((item) => item.id === id) || null;
 
   const galleryImages = useMemo(
     () =>
@@ -62,7 +53,7 @@ export function PortfolioDetail() {
     [project],
   );
 
-  if (!checked) {
+  if (loading) {
     return (
       <div className="mx-auto w-full max-w-5xl px-4 py-12 text-center min-h-[60vh] flex items-center justify-center">
         <p className="text-muted">Loading project...</p>
