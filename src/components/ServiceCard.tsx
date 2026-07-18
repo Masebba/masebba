@@ -13,7 +13,7 @@ export function ServiceCard({
 }: ServiceCardProps) {
   return (
     <Card className="group hover:border-primary transition-all duration-300 hover:-translate-y-1 h-full flex flex-col">
-      <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
+      <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-6 group-hover:bg-primary/20 transition-colors">
         <Icon className="w-6 h-6 text-primary" />
       </div>
       <h3 className="text-xl font-semibold text-main mb-3">{title}</h3>

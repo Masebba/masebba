@@ -4,13 +4,17 @@ import { Button } from '../ui/Button';
 import { MailIcon } from 'lucide-react';
 export function CTASection() {
   return (
-    <section className="py-24 relative overflow-hidden bg-surface-dark text-white">
-      <div className="absolute inset-0 bg-primary/10" />
+    <section
+      className="py-24 relative overflow-hidden bg-surface-dark bg-cover bg-center text-white"
+      style={{ backgroundImage: "url('/images/project-cta-flourish.png')" }}
+    >
+      <div className="absolute inset-0 bg-slate-950/55" />
+      <div className="absolute inset-0 bg-gradient-to-r from-slate-950/30 via-slate-950/60 to-slate-950/30" />
       <div className="container mx-auto px-4 relative z-10 text-center max-w-3xl">
-        <h2 className="text-4xl md:text-5xl font-bold mb-6">
+        <h2 className="font-bold mb-6">
           Have a project in mind?
         </h2>
-        <p className="text-lg md:text-xl text-gray-300 mb-10 leading-relaxed">
+        <p className="text-base md:text-lg text-gray-200 mb-10 leading-relaxed">
           I'm currently available for freelance work and full-time
           opportunities. Let's build something amazing together.
         </p>

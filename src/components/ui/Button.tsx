@@ -27,9 +27,9 @@ export function Button({
     ghost: "hover:bg-surface text-main",
   };
   const sizes = {
-    sm: "h-9 px-3 text-sm",
-    md: "h-10 px-4 py-2",
-    lg: "h-12 px-8 text-lg",
+    sm: "h-8 px-2.5 text-xs",
+    md: "h-9 px-3 text-sm",
+    lg: "h-10 px-5 text-sm",
   };
   const widthClass = fullWidth ? "w-full" : "";
   return (

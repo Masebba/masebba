@@ -20,7 +20,7 @@ export function Card({
   };
   return (
     <div
-      className={`bg-surface rounded-xl border border-border shadow-sm overflow-hidden ${paddingClasses[padding]} ${className}`}
+      className={`ui-card rounded-sm border overflow-hidden ${paddingClasses[padding]} ${className}`}
       onClick={onClick}>
       
       {children}

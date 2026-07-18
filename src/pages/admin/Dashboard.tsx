@@ -93,7 +93,7 @@ export function Dashboard() {
           const Icon = stat.icon;
           return (
             <Card key={stat.name} className="flex items-center p-6 cursor-pointer hover:border-primary transition-colors" onClick={() => navigate(stat.link)}>
-              <div className="p-3 rounded-lg bg-primary/10 text-primary mr-4">
+              <div className="p-3 rounded-full bg-primary/10 text-primary mr-4">
                 <Icon className="w-6 h-6" />
               </div>
               <div>

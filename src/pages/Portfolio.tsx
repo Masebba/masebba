@@ -253,9 +253,6 @@ export function Portfolio() {
       <section className="mb-24">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
           <div>
-            <h2 className="text-sm font-bold text-primary uppercase tracking-widest mb-2">
-              Development
-            </h2>
             <h3 className="text-2xl md:text-3xl font-bold text-main">Tech Projects</h3>
           </div>
           {projects.length > 0 && (
@@ -309,9 +306,6 @@ export function Portfolio() {
       <section className="mb-24">
         <div className="flex items-end justify-between mb-10">
           <div>
-            <h2 className="text-sm font-bold text-primary uppercase tracking-widest mb-2">
-              Creative
-            </h2>
             <h3 className="text-2xl md:text-3xl font-bold text-main">Work outside of Software Development</h3>
           </div>
         </div>
@@ -322,7 +316,7 @@ export function Portfolio() {
               {paginatedCreative.map((item) => (
                 <Card key={item.title} padding="lg" className="h-full">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
                       <PaletteIcon className="w-6 h-6" />
                     </div>
                     <div>
@@ -362,9 +356,6 @@ export function Portfolio() {
       <section>
         <div className="flex items-end justify-between mb-10">
           <div>
-            <h2 className="text-sm font-bold text-primary uppercase tracking-widest mb-2">
-              Research
-            </h2>
             <h3 className="text-2xl md:text-3xl font-bold text-main">Publications</h3>
           </div>
         </div>

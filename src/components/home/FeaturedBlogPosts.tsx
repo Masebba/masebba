@@ -38,7 +38,6 @@ export function FeaturedBlogPosts() {
       <div className="container mx-auto w-full max-w-6xl px-4">
         <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
           <div className="max-w-2xl">
-            <h2 className="text-sm font-bold text-primary uppercase tracking-widest mb-2">Insights</h2>
             <h3 className="text-3xl md:text-4xl font-bold text-main">Latest Articles</h3>
           </div>
           <Link to="/blog">
