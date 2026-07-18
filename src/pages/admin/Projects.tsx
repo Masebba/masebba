@@ -63,7 +63,7 @@ export function Projects() {
         const index = projects.findIndex((project) => project.id === item.id);
         return (
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-main w-8">{(item.order ?? index) + 1}</span>
+            <span className="font-semibold text-main w-8">{index + 1}</span>
             <div className="flex flex-col">
               <button type="button" onClick={() => moveProjectOrder(item.id, -1)} disabled={index <= 0 || isSubmitting} className="p-1 rounded hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed" aria-label="Move project up"><ArrowUpIcon className="w-4 h-4" /></button>
               <button type="button" onClick={() => moveProjectOrder(item.id, 1)} disabled={index < 0 || index >= projects.length - 1 || isSubmitting} className="p-1 rounded hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed" aria-label="Move project down"><ArrowDownIcon className="w-4 h-4" /></button>
@@ -89,7 +89,7 @@ export function Projects() {
 
             {isOnHome ? (
               <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-primary">#{(item.homeOrder ?? homeIndex) + 1}</span>
+                <span className="text-xs font-semibold text-primary">#{homeIndex + 1}</span>
                 <button type="button" onClick={() => moveProjectHomeOrder(item.id, -1)} disabled={homeIndex <= 0 || isSubmitting} className="p-1 rounded hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed" aria-label="Move home project up"><ArrowUpIcon className="w-4 h-4" /></button>
                 <button type="button" onClick={() => moveProjectHomeOrder(item.id, 1)} disabled={homeIndex < 0 || homeIndex >= homeProjects.length - 1 || isSubmitting} className="p-1 rounded hover:bg-surface disabled:opacity-30 disabled:cursor-not-allowed" aria-label="Move home project down"><ArrowDownIcon className="w-4 h-4" /></button>
               </div>

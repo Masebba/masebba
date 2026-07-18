@@ -224,12 +224,29 @@ export function useProjects() {
       return { error: 'Cannot move project further in that direction.' };
     }
 
-    const current = ordered[currentIndex];
-    const target = ordered[targetIndex];
+    const [moved] = ordered.splice(currentIndex, 1);
+    ordered.splice(targetIndex, 0, moved);
+
+    // The dashboard's main order is also the default order shown by Recent Works.
+    // Reindex every item so duplicate or missing legacy order values cannot make a
+    // move silently do nothing.
+    const homeOrderById = new Map(
+      ordered
+        .filter((project) => project.showOnHome)
+        .map((project, index) => [project.id, index + 1]),
+    );
 
     try {
-      await updateDocument<Project>(collections.projects, current.id, { order: target.order });
-      await updateDocument<Project>(collections.projects, target.id, { order: current.order });
+      const results = await Promise.all(
+        ordered.map((project, index) =>
+          updateDocument<Project>(collections.projects, project.id, {
+            order: index + 1,
+            ...(project.showOnHome ? { homeOrder: homeOrderById.get(project.id)! } : {}),
+          }),
+        ),
+      );
+      const failure = results.find((result) => result.error);
+      if (failure?.error) throw new Error(failure.error);
       return { error: null };
     } catch (err: any) {
       return { error: err.message };
@@ -245,12 +262,17 @@ export function useProjects() {
       return { error: 'Cannot move project further in that direction.' };
     }
 
-    const current = ordered[currentIndex];
-    const target = ordered[targetIndex];
+    const [moved] = ordered.splice(currentIndex, 1);
+    ordered.splice(targetIndex, 0, moved);
 
     try {
-      await updateDocument<Project>(collections.projects, current.id, { homeOrder: target.homeOrder });
-      await updateDocument<Project>(collections.projects, target.id, { homeOrder: current.homeOrder });
+      const results = await Promise.all(
+        ordered.map((project, index) =>
+          updateDocument<Project>(collections.projects, project.id, { homeOrder: index + 1 }),
+        ),
+      );
+      const failure = results.find((result) => result.error);
+      if (failure?.error) throw new Error(failure.error);
       return { error: null };
     } catch (err: any) {
       return { error: err.message };
@@ -261,12 +283,28 @@ export function useProjects() {
     const current = projects.find((project) => project.id === id);
     if (!current) return { error: 'Project not found.' };
 
-    const nextData: Partial<Project> = {
-      showOnHome,
-      homeOrder: showOnHome ? (current.showOnHome ? current.homeOrder : nextHomeOrder) : 0,
-    };
+    const visibleProjects = [...projects]
+      .filter((project) => project.id !== id && project.showOnHome)
+      .sort(compareHomeProjects);
+    if (showOnHome) visibleProjects.push(current);
 
-    return await updateDocument<Project>(collections.projects, id, nextData);
+    try {
+      const results = await Promise.all([
+        updateDocument<Project>(collections.projects, id, {
+          showOnHome,
+          homeOrder: showOnHome ? visibleProjects.length : 0,
+        }),
+        ...visibleProjects
+          .filter((project) => project.id !== id)
+          .map((project, index) =>
+            updateDocument<Project>(collections.projects, project.id, { homeOrder: index + 1 }),
+          ),
+      ]);
+      const failure = results.find((result) => result.error);
+      return { error: failure?.error || null };
+    } catch (err: any) {
+      return { error: err.message };
+    }
   };
 
   return {
